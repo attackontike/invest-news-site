@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import NewsRow from '../components/NewsRow.astro';
+import Empty from '../components/Empty.astro';
+import { loadNews, RULES } from '../lib/news';
+import { fmtDateTime, briefingHtml } from '../lib/format';
+
+const { editions, top } = await loadNews();
+const [latest, ...earlier] = editions;
+---
+<BaseLayout title="시장 브리핑" description="국내·미국 시장 뉴스 요약" section="brief">
+  <PageHead
+    title="시장 브리핑"
+    lead="매일 07:00, 12:00, 16:30, 22:00에 그때까지 나온 뉴스를 모아 요약합니다."
+  />
+
+  {!latest ? <Empty /> : (
+    <>
+      <section class="brief" aria-labelledby="brief-h">
+        <h2 id="brief-h" class="brief-h">
+          {latest.edition} 브리핑
+          <time datetime={latest.generatedAt}>{fmtDateTime(latest.generatedAt)}</time>
+        </h2>
+        <ul class="brief-lines">
+          {latest.briefing.map((line) => <li set:html={briefingHtml(line)} />)}
+        </ul>
+        {earlier.length > 0 && (
+          <details class="brief-earlier">
+            <summary>오늘 앞선 브리핑 {earlier.length}개</summary>
+            {earlier.map((e) => (
+              <div class="brief-old">
+                <h3>{e.edition} 브리핑</h3>
+                <ul>{e.briefing.map((line) => <li set:html={briefingHtml(line)} />)}</ul>
+              </div>
+            ))}
+          </details>
+        )}
+      </section>
+
+      <div class="split">
+        <section aria-labelledby="kr-h">
+          <h2 id="kr-h" class="sec-h">국내 주요 뉴스</h2>
+          <p class="sec-note">최근 {RULES.topHours}시간, 중요도순</p>
+          {top.KR.length ? <ol class="rows">{top.KR.map((it) => <NewsRow item={it} compact />)}</ol> : <p class="none">해당 기간 기사가 없습니다.</p>}
+        </section>
+        <section aria-labelledby="us-h">
+          <h2 id="us-h" class="sec-h">미국·해외 주요 뉴스</h2>
+          <p class="sec-note">최근 {RULES.topHours}시간, 중요도순</p>
+          {top.US.length ? <ol class="rows">{top.US.map((it) => <NewsRow item={it} compact />)}</ol> : <p class="none">해당 기간 기사가 없습니다.</p>}
+        </section>
+      </div>
+      <p class="more"><a href="/news">최근 7일 시장 뉴스 전체 보기</a></p>
+    </>
+  )}
+</BaseLayout>

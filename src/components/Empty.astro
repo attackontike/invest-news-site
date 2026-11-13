@@ -1,0 +1,8 @@
+---
+interface Props { message?: string }
+const { message = '아직 표시할 기사가 없습니다.' } = Astro.props;
+---
+<div class="empty">
+  <p><strong>{message}</strong></p>
+  <p>n8n의 수집 워크플로가 기사를 모은 뒤 "게시" 워크플로가 실행되면 이곳에 나타납니다. 게시는 매일 07:00, 12:00, 16:30, 22:00에 자동으로 실행됩니다.</p>
+</div>

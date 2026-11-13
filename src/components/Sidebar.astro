@@ -1,0 +1,51 @@
+---
+import { loadNews } from '../lib/news';
+import { fmtDateTime } from '../lib/format';
+
+interface Props { current: 'brief' | 'news' }
+const { current } = Astro.props;
+const { generatedAt, news } = await loadNews();
+const discord = import.meta.env.PUBLIC_DISCORD_INVITE;
+
+const live = [
+  { id: 'brief', href: '/', label: '시장 브리핑', desc: '하루 4번 정리하는 시장 요약' },
+  { id: 'news', href: '/news', label: '시장 뉴스', desc: `최근 7일 기사 ${news.length}건` },
+];
+const soon = [
+  { label: '공시·공식 발표', when: '2단계' },
+  { label: '관심 종목', when: '2단계' },
+  { label: '리서치', when: '3단계' },
+  { label: '데이터·일정', when: '4단계' },
+];
+---
+<header class="rail">
+  <a class="brand" href="/">
+    <img class="brand-mark" src="/favicon.svg" alt="" width="32" height="32" />
+    <span class="brand-text">
+      <strong>투자 뉴스 브리프</strong>
+      <span>국내·미국 시장 뉴스를 모아 요약합니다</span>
+    </span>
+  </a>
+
+  <nav class="nav" aria-label="메뉴">
+    {live.map((m) => (
+      <a href={m.href} class="nav-item" aria-current={m.id === current ? 'page' : undefined}>
+        <span class="nav-label">{m.label}</span>
+        <span class="nav-desc">{m.desc}</span>
+      </a>
+    ))}
+    <div class="nav-soon" aria-label="준비 중인 메뉴">
+      {soon.map((m) => (
+        <span class="nav-item is-soon">
+          <span class="nav-label">{m.label}</span>
+          <span class="nav-desc">{m.when}에서 열립니다</span>
+        </span>
+      ))}
+    </div>
+  </nav>
+
+  <div class="rail-foot">
+    {generatedAt ? <p>마지막 게시 <time datetime={generatedAt}>{fmtDateTime(generatedAt)}</time></p> : <p>아직 게시된 내용이 없습니다</p>}
+    {discord && <a class="discord" href={discord} target="_blank" rel="noopener">Discord에서 알림 받기</a>}
+  </div>
+</header>
