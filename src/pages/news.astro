@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHead from '../components/PageHead.astro';
 import NewsRow from '../components/NewsRow.astro';
 import Empty from '../components/Empty.astro';
+import FilterScript from '../components/FilterScript.astro';
 import { loadNews, groupByDay, RULES } from '../lib/news';
 import { fmtDay } from '../lib/format';
 
@@ -25,7 +26,7 @@ const count = (m: 'KR' | 'US') => news.filter((n) => (m === 'KR' ? n.market === 
           <button type="button" aria-pressed="false" data-value="KR">국내 {count('KR')}</button>
           <button type="button" aria-pressed="false" data-value="US">미국·해외 {count('US')}</button>
         </div>
-        <div class="seg" data-filter="tone">
+        <div class="seg" data-filter="sentiment">
           <button type="button" aria-pressed="true" data-value="all">모든 논조</button>
           <button type="button" aria-pressed="false" data-value="호재">호재</button>
           <button type="button" aria-pressed="false" data-value="악재">악재</button>
@@ -43,34 +44,4 @@ const count = (m: 'KR' | 'US') => news.filter((n) => (m === 'KR' ? n.market === 
   )}
 </BaseLayout>
 
-<script>
-  const state = { market: 'all', tone: 'all' };
-  const apply = () => {
-    let shown = 0;
-    document.querySelectorAll<HTMLElement>('.day').forEach((day) => {
-      let n = 0;
-      day.querySelectorAll<HTMLElement>('.row').forEach((row) => {
-        const ok =
-          (state.market === 'all' || row.dataset.market === state.market) &&
-          (state.tone === 'all' || row.dataset.sentiment === state.tone);
-        row.hidden = !ok;
-        if (ok) n++;
-      });
-      day.hidden = n === 0;
-      const badge = day.querySelector('.day-h span');
-      if (badge) badge.textContent = `${n}건`;
-      shown += n;
-    });
-    const none = document.getElementById('no-match');
-    if (none) none.hidden = shown > 0;
-  };
-  document.querySelectorAll<HTMLElement>('.seg').forEach((seg) => {
-    seg.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest('button');
-      if (!btn) return;
-      seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
-      state[seg.dataset.filter as 'market' | 'tone'] = btn.dataset.value!;
-      apply();
-    });
-  });
-</script>
+<FilterScript />

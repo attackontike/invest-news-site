@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar.astro';
 interface Props {
   title: string;
   description: string;
-  section: 'brief' | 'news';
+  section: 'brief' | 'news' | 'filings' | 'watchlist';
 }
 const { title, description, section } = Astro.props;
 ---

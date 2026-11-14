@@ -1,0 +1,33 @@
+---
+// .seg[data-filter="market|sentiment|watch"] 버튼으로 .row를 거르고, 빈 날짜 묶음은 숨깁니다.
+---
+<script>
+  const state: Record<string, string> = {};
+  const apply = () => {
+    let shown = 0;
+    document.querySelectorAll<HTMLElement>('.day').forEach((day) => {
+      let n = 0;
+      day.querySelectorAll<HTMLElement>('.row').forEach((row) => {
+        const ok = Object.entries(state).every(([k, v]) => v === 'all' || row.dataset[k] === v);
+        row.hidden = !ok;
+        if (ok) n++;
+      });
+      day.hidden = n === 0;
+      const badge = day.querySelector('.day-h span');
+      if (badge) badge.textContent = `${n}건`;
+      shown += n;
+    });
+    const none = document.getElementById('no-match');
+    if (none) none.hidden = shown > 0;
+  };
+  document.querySelectorAll<HTMLElement>('.seg').forEach((seg) => {
+    state[seg.dataset.filter!] = 'all';
+    seg.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('button');
+      if (!btn) return;
+      seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      state[seg.dataset.filter!] = btn.dataset.value!;
+      apply();
+    });
+  });
+</script>

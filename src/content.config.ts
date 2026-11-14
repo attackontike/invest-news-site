@@ -30,6 +30,7 @@ const item = z.object({
   coverage: z.number().default(1),
   storyKey: z.string().optional(),
   edition: z.string().optional(),
+  eventType: z.string().optional(),
 });
 
 const digest = defineCollection({
@@ -37,6 +38,7 @@ const digest = defineCollection({
   schema: z.object({
     date: z.string(),
     generatedAt: z.string(),
+    watchlist: z.array(z.object({ market: z.string(), code: z.string(), name: z.string() })).default([]),
     editions: z
       .array(
         z.object({

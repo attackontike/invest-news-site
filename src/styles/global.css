@@ -197,3 +197,15 @@ a.nav-item:hover { background: var(--paper); }
   .row { gap: .75rem; padding-left: .75rem; }
   .mkt { margin-left: 0; }
 }
+
+/* 2단계: 공시 유형, 관심 종목 */
+.event { font-size: .75rem; font-weight: 600; color: var(--ink); }
+.chips > .watch { color: var(--ink); background: var(--surface); border-color: var(--ink); font-weight: 700; }
+.filings-top { margin-bottom: 2.5rem; }
+.watch-index { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+.watch-index a { text-decoration: none; padding: .375rem .75rem; border: 1px solid var(--rule-strong); border-radius: 999px; background: var(--surface); font-weight: 600; font-size: .875rem; }
+.watch-index a:hover { border-color: var(--ink); }
+.watch-index small { margin-left: .375rem; color: var(--muted); font-weight: 400; }
+.watch-block { margin-bottom: 2.5rem; }
+.watch-block .sec-h { margin-bottom: .75rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .625rem; }
+.watch-code { font-size: .8125rem; font-weight: 400; color: var(--muted); }

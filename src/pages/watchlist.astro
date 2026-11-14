@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import NewsRow from '../components/NewsRow.astro';
+import { loadNews, RULES } from '../lib/news';
+
+const { watchGroups } = await loadNews();
+---
+<BaseLayout title="관심 종목" description="관심 종목별 공시와 뉴스" section="watchlist">
+  <PageHead
+    title="관심 종목"
+    lead={`종목마다 최근 ${RULES.newsDays}일의 공시와 뉴스를 최신순으로 ${RULES.watchItems}건까지 보여 줍니다. 관심 종목 기사는 중요도에 가산점이 붙습니다.`}
+  />
+
+  {watchGroups.length === 0 ? (
+    <div class="empty">
+      <p><strong>아직 등록된 관심 종목이 없습니다.</strong></p>
+      <p>Supabase의 Table Editor → watchlist에서 시장(KR·US), 종목코드(예: 005930, NVDA), 이름을 추가하면 다음 게시부터 이곳에 나타납니다. 3단계에서는 Discord의 /watch 명령으로도 추가할 수 있습니다.</p>
+    </div>
+  ) : (
+    <>
+      <nav class="watch-index" aria-label="종목 바로가기">
+        {watchGroups.map((w) => <a href={`#w-${w.market}-${w.code}`}>{w.name}<small>{w.items.length}</small></a>)}
+      </nav>
+      {watchGroups.map((w) => (
+        <section class="watch-block" id={`w-${w.market}-${w.code}`} aria-labelledby={`h-${w.market}-${w.code}`}>
+          <h2 class="sec-h" id={`h-${w.market}-${w.code}`}>
+            {w.name} <span class="watch-code">{w.code} · {w.market === 'KR' ? '국내' : '미국'}</span>
+          </h2>
+          {w.items.length ? (
+            <ol class="rows">{w.items.map((it) => <NewsRow item={it} compact />)}</ol>
+          ) : (
+            <p class="none">최근 {RULES.newsDays}일 동안 공시나 뉴스가 없습니다.</p>
+          )}
+        </section>
+      ))}
+    </>
+  )}
+</BaseLayout>

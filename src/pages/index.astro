@@ -6,7 +6,7 @@ import Empty from '../components/Empty.astro';
 import { loadNews, RULES } from '../lib/news';
 import { fmtDateTime, briefingHtml } from '../lib/format';
 
-const { editions, top } = await loadNews();
+const { editions, top, topFilings } = await loadNews();
 const [latest, ...earlier] = editions;
 ---
 <BaseLayout title="시장 브리핑" description="국내·미국 시장 뉴스 요약" section="brief">
@@ -37,6 +37,14 @@ const [latest, ...earlier] = editions;
           </details>
         )}
       </section>
+
+      {topFilings.length > 0 && (
+        <section class="filings-top" aria-labelledby="fl-h">
+          <h2 id="fl-h" class="sec-h">주요 공시·공식 발표</h2>
+          <p class="sec-note">최근 {RULES.topHours}시간, 중요도순 · <a href="/filings">전체 보기</a></p>
+          <ol class="rows">{topFilings.map((it) => <NewsRow item={it} compact />)}</ol>
+        </section>
+      )}
 
       <div class="split">
         <section aria-labelledby="kr-h">

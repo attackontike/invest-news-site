@@ -1,5 +1,5 @@
 ---
-import type { Item } from '../lib/news';
+import { loadNews, isWatched, type Item } from '../lib/news';
 import { fmtTime } from '../lib/format';
 
 interface Props { item: Item; compact?: boolean }
@@ -7,14 +7,17 @@ const { item, compact = false } = Astro.props;
 const title = item.titleKo || item.title;
 const bars = Math.max(1, Math.min(5, Math.ceil(item.importance / 20)));
 const marketLabel = item.market === 'KR' ? '국내' : item.market === 'US' ? '미국' : '해외';
+const { watchSet } = await loadNews();
+const watched = isWatched(item, watchSet);
 ---
-<li class="row" data-market={item.market === 'KR' ? 'KR' : 'US'} data-sentiment={item.sentiment}>
+<li class="row" data-market={item.market === 'KR' ? 'KR' : 'US'} data-sentiment={item.sentiment} data-watch={watched ? 'yes' : 'no'}>
   <div class="meter" role="img" aria-label={`중요도 ${item.importance}점`} title={`중요도 ${item.importance}점`}>
     {[5, 4, 3, 2, 1].map((n) => <span class={n <= bars ? 'on' : ''}></span>)}
   </div>
   <div class="row-body">
     <p class="meta">
       <span class="grade" data-grade={item.sourceGrade}>{item.sourceGrade}</span>
+      {item.eventType && <span class="event">{item.eventType}</span>}
       <span class="src">{item.source}</span>
       <time datetime={item.publishedAt}>{fmtTime(item.publishedAt)}</time>
       <span class="mkt">{marketLabel}</span>
@@ -29,6 +32,7 @@ const marketLabel = item.market === 'KR' ? '국내' : item.market === 'US' ? '�
       </details>
     )}
     <p class="chips">
+      {watched && <span class="watch" title="관심 종목">★ 관심</span>}
       <span class="tone" data-tone={item.sentiment}>{item.sentiment}</span>
       {item.tickers.map((t) => <span class="ticker">{t.name}{t.code && <small>{t.code}</small>}</span>)}
       {!compact && item.tags.map((t) => <span class="tag">#{t}</span>)}

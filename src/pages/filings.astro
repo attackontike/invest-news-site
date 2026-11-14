@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import NewsRow from '../components/NewsRow.astro';
+import Empty from '../components/Empty.astro';
+import FilterScript from '../components/FilterScript.astro';
+import { loadNews, groupByDay, isWatched, RULES } from '../lib/news';
+import { fmtDay } from '../lib/format';
+
+const { filings, ref, watchSet } = await loadNews();
+const days = groupByDay(filings);
+const kr = filings.filter((n) => n.market === 'KR').length;
+const watchedCount = filings.filter((n) => isWatched(n, watchSet)).length;
+---
+<BaseLayout title="공시·공식 발표" description="DART·SEC 공시와 연준 발표" section="filings">
+  <PageHead
+    title="공시·공식 발표"
+    lead="DART(국내)와 SEC(미국 관심 종목) 공시, 연준 통화정책 발표입니다. 관심 종목은 모든 공시를, 그 밖의 상장사는 유상증자·공급계약·실적처럼 영향이 큰 공시만 모읍니다."
+    rule={`최근 ${RULES.newsDays}일, ${filings.length}건`}
+  />
+
+  {filings.length === 0 ? <Empty message="아직 표시할 공시가 없습니다." /> : (
+    <>
+      <div class="filters" role="group" aria-label="공시 거르기">
+        <div class="seg" data-filter="market">
+          <button type="button" aria-pressed="true" data-value="all">전체 {filings.length}</button>
+          <button type="button" aria-pressed="false" data-value="KR">국내 {kr}</button>
+          <button type="button" aria-pressed="false" data-value="US">미국 {filings.length - kr}</button>
+        </div>
+        <div class="seg" data-filter="watch">
+          <button type="button" aria-pressed="true" data-value="all">모든 회사</button>
+          <button type="button" aria-pressed="false" data-value="yes">관심 종목만 {watchedCount}</button>
+        </div>
+      </div>
+
+      {days.map((d) => (
+        <section class="day" aria-label={fmtDay(d.day)}>
+          <h2 class="day-h">{fmtDay(d.day, ref)} <span>{d.items.length}건</span></h2>
+          <ol class="rows">{d.items.map((it) => <NewsRow item={it} />)}</ol>
+        </section>
+      ))}
+      <p class="none" id="no-match" hidden>조건에 맞는 공시가 없습니다.</p>
+    </>
+  )}
+</BaseLayout>
+<FilterScript />

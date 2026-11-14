@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "00000001-0000-4000-8000-01a1d4f41c8e",
+      "id": "00000001-0000-4000-8000-01a1d96de096",
       "name": "매시 정각",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -23,9 +23,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\n// trust: 매체 기본 신뢰도(1~5), grade: 출처 등급(공시/통신사/해설/커뮤니티)\nreturn [{\n  json: {\n    supabaseUrl: 'https://YOUR-PROJECT.supabase.co', // Supabase → Project Settings → API의 Project URL\n\n    collectHours: 48, // 이보다 오래된 기사는 모으지 않음\n    perSourceMax: 15, // 한 번 실행에 피드(검색어)당 최대 기사 수\n    totalMax: 120, // 한 번 실행에 전체 최대 기사 수\n\n    // 1) 매체 RSS\n    feeds: [\n      { name: '연합뉴스 경제', source: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml', market: 'KR', trust: 4, grade: '통신사' },\n      { name: '한국경제 증권', source: '한국경제', url: 'https://www.hankyung.com/feed/finance', market: 'KR', trust: 4, grade: '해설' },\n      { name: '매일경제 증권', source: '매일경제', url: 'https://www.mk.co.kr/rss/50200011/', market: 'KR', trust: 4, grade: '해설' },\n      { name: 'CNBC Finance', source: 'CNBC', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664', market: 'US', trust: 4, grade: '해설' },\n      { name: 'MarketWatch', source: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories', market: 'US', trust: 4, grade: '해설' },\n      { name: 'Yahoo Finance', source: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex', market: 'US', trust: 3, grade: '해설' },\n    ],\n\n    // 2) Google News 검색 (최근 1일). 매체명은 기사마다 붙어 오며 아래 sources 표로 신뢰도를 정함\n    googleNews: [\n      { q: '코스피 OR 코스닥', market: 'KR' },\n      { q: '금리 환율 증시', market: 'KR' },\n      { q: 'stock market Wall Street', market: 'US' },\n      { q: 'Federal Reserve rates', market: 'US' },\n      { q: 'site:reuters.com markets', market: 'US' },\n    ],\n\n    // 3) 네이버 뉴스 검색 API (자격 증명 \"Naver API\"가 필요). 비우면 건너뜀\n    naverQueries: ['코스피', '코스닥', '증시', '환율', '금리'],\n    naverDisplay: 30,\n    // 네이버 원문 주소의 도메인 → 매체명\n    naverDomains: {\n      'yna.co.kr': '연합뉴스', 'einfomax.co.kr': '연합인포맥스', 'hankyung.com': '한국경제', 'mk.co.kr': '매일경제',\n      'sedaily.com': '서울경제', 'edaily.co.kr': '이데일리', 'mt.co.kr': '머니투데이', 'news.mt.co.kr': '머니투데이',\n      'fnnews.com': '파이낸셜뉴스', 'asiae.co.kr': '아시아경제', 'heraldcorp.com': '헤럴드경제', 'biz.chosun.com': '조선비즈',\n      'chosun.com': '조선일보', 'joongang.co.kr': '중앙일보', 'donga.com': '동아일보', 'hani.co.kr': '한겨레', 'khan.co.kr': '경향신문',\n      'news1.kr': '뉴스1', 'newsis.com': '뉴시스', 'thebell.co.kr': '더벨', 'bloter.net': '블로터', 'ytn.co.kr': 'YTN', 'yonhapnewstv.co.kr': '연합뉴스TV',\n    },\n\n    // 매체명 → 신뢰도·등급 (Google News, 네이버 공통). 목록에 없는 매체는 unknownSource 값\n    sources: {\n      '연합뉴스': [4, '통신사'], '연합인포맥스': [5, '통신사'], '뉴스1': [3, '통신사'], '뉴시스': [3, '통신사'],\n      '한국경제': [4, '해설'], '매일경제': [4, '해설'], '서울경제': [3, '해설'], '이데일리': [3, '해설'], '머니투데이': [3, '해설'],\n      '파이낸셜뉴스': [3, '해설'], '아시아경제': [3, '해설'], '헤럴드경제': [3, '해설'], '조선비즈': [3, '해설'], '더벨': [4, '해설'],\n      '조선일보': [4, '해설'], '중앙일보': [4, '해설'], '동아일보': [4, '해설'], '한겨레': [4, '해설'], '경향신문': [4, '해설'],\n      'Reuters': [5, '통신사'], 'Associated Press': [5, '통신사'], 'AP News': [5, '통신사'], 'Bloomberg': [5, '통신사'], 'Bloomberg.com': [5, '통신사'],\n      'The Wall Street Journal': [5, '해설'], 'Financial Times': [5, '해설'], 'CNBC': [4, '해설'], 'MarketWatch': [4, '해설'],\n      'Barron\\'s': [4, '해설'], 'Yahoo Finance': [3, '해설'], 'Investopedia': [3, '해설'], 'Seeking Alpha': [2, '커뮤니티'], 'The Motley Fool': [2, '커뮤니티'],\n    },\n    unknownSource: [2, '해설'],\n  },\n}];\n"
+        "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\n// trust: 매체 기본 신뢰도(1~5), grade: 출처 등급(공시/통신사/해설/커뮤니티)\nreturn [{\n  json: {\n    supabaseUrl: 'https://YOUR-PROJECT.supabase.co', // Supabase → Project Settings → API의 Project URL\n\n    collectHours: 48, // 이보다 오래된 기사는 모으지 않음\n    perSourceMax: 15, // 한 번 실행에 피드(검색어)당 최대 기사 수\n    totalMax: 120, // 한 번 실행에 전체 최대 기사 수\n\n    // 관심 종목(Supabase watchlist) 뉴스: 국내는 네이버, 미국은 Google News에서 종목마다 검색\n    watchNewsMax: 20, // 검색할 관심 종목 최대 수\n    watchNaverDisplay: 10, // 국내 관심 종목 1개당 네이버 검색 결과 수\n\n    // 1) 매체 RSS\n    feeds: [\n      { name: '연합뉴스 경제', source: '연합뉴스', url: 'https://www.yna.co.kr/rss/economy.xml', market: 'KR', trust: 4, grade: '통신사' },\n      { name: '한국경제 증권', source: '한국경제', url: 'https://www.hankyung.com/feed/finance', market: 'KR', trust: 4, grade: '해설' },\n      { name: '매일경제 증권', source: '매일경제', url: 'https://www.mk.co.kr/rss/50200011/', market: 'KR', trust: 4, grade: '해설' },\n      { name: 'CNBC Finance', source: 'CNBC', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664', market: 'US', trust: 4, grade: '해설' },\n      { name: 'MarketWatch', source: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories', market: 'US', trust: 4, grade: '해설' },\n      { name: 'Yahoo Finance', source: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex', market: 'US', trust: 3, grade: '해설' },\n    ],\n\n    // 2) Google News 검색 (최근 1일). 매체명은 기사마다 붙어 오며 아래 sources 표로 신뢰도를 정함\n    googleNews: [\n      { q: '코스피 OR 코스닥', market: 'KR' },\n      { q: '금리 환율 증시', market: 'KR' },\n      { q: 'stock market Wall Street', market: 'US' },\n      { q: 'Federal Reserve rates', market: 'US' },\n      { q: 'site:reuters.com markets', market: 'US' },\n    ],\n\n    // 3) 네이버 뉴스 검색 API (자격 증명 \"Naver API\"가 필요). 비우면 건너뜀\n    naverQueries: ['코스피', '코스닥', '증시', '환율', '금리'],\n    naverDisplay: 30,\n    // 네이버 원문 주소의 도메인 → 매체명\n    naverDomains: {\n      'yna.co.kr': '연합뉴스', 'einfomax.co.kr': '연합인포맥스', 'hankyung.com': '한국경제', 'mk.co.kr': '매일경제',\n      'sedaily.com': '서울경제', 'edaily.co.kr': '이데일리', 'mt.co.kr': '머니투데이', 'news.mt.co.kr': '머니투데이',\n      'fnnews.com': '파이낸셜뉴스', 'asiae.co.kr': '아시아경제', 'heraldcorp.com': '헤럴드경제', 'biz.chosun.com': '조선비즈',\n      'chosun.com': '조선일보', 'joongang.co.kr': '중앙일보', 'donga.com': '동아일보', 'hani.co.kr': '한겨레', 'khan.co.kr': '경향신문',\n      'news1.kr': '뉴스1', 'newsis.com': '뉴시스', 'thebell.co.kr': '더벨', 'bloter.net': '블로터', 'ytn.co.kr': 'YTN', 'yonhapnewstv.co.kr': '연합뉴스TV',\n    },\n\n    // 매체명 → 신뢰도·등급 (Google News, 네이버 공통). 목록에 없는 매체는 unknownSource 값\n    sources: {\n      '연합뉴스': [4, '통신사'], '연합인포맥스': [5, '통신사'], '뉴스1': [3, '통신사'], '뉴시스': [3, '통신사'],\n      '한국경제': [4, '해설'], '매일경제': [4, '해설'], '서울경제': [3, '해설'], '이데일리': [3, '해설'], '머니투데이': [3, '해설'],\n      '파이낸셜뉴스': [3, '해설'], '아시아경제': [3, '해설'], '헤럴드경제': [3, '해설'], '조선비즈': [3, '해설'], '더벨': [4, '해설'],\n      '조선일보': [4, '해설'], '중앙일보': [4, '해설'], '동아일보': [4, '해설'], '한겨레': [4, '해설'], '경향신문': [4, '해설'],\n      'Reuters': [5, '통신사'], 'Associated Press': [5, '통신사'], 'AP News': [5, '통신사'], 'Bloomberg': [5, '통신사'], 'Bloomberg.com': [5, '통신사'],\n      'The Wall Street Journal': [5, '해설'], 'Financial Times': [5, '해설'], 'CNBC': [4, '해설'], 'MarketWatch': [4, '해설'],\n      'Barron\\'s': [4, '해설'], 'Yahoo Finance': [3, '해설'], 'Investopedia': [3, '해설'], 'Seeking Alpha': [2, '커뮤니티'], 'The Motley Fool': [2, '커뮤니티'],\n    },\n    unknownSource: [2, '해설'],\n  },\n}];\n"
       },
-      "id": "00000002-0000-4000-8000-01a1d4f41c8f",
+      "id": "00000002-0000-4000-8000-01a1d96de096",
       "name": "설정",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -36,14 +36,37 @@
     },
     {
       "parameters": {
-        "jsCode": "// 매체 RSS와 Google News 검색 주소를 요청 목록으로 만듭니다.\nconst c = $('설정').first().json;\nconst out = [];\nfor (const f of c.feeds) {\n  out.push({ json: { kind: 'rss', label: f.name, url: f.url, source: f.source, market: f.market, trust: f.trust, grade: f.grade } });\n}\nfor (const g of c.googleNews) {\n  const q = encodeURIComponent(`${g.q} when:1d`);\n  const loc = g.market === 'KR' ? 'hl=ko&gl=KR&ceid=KR:ko' : 'hl=en-US&gl=US&ceid=US:en';\n  out.push({ json: { kind: 'gnews', label: `Google News: ${g.q}`, url: `https://news.google.com/rss/search?q=${q}&${loc}`, market: g.market } });\n}\nreturn out;\n"
+        "method": "POST",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/rpc/t1_context",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}",
+        "options": {
+          "timeout": 30000
+        }
       },
-      "id": "00000003-0000-4000-8000-01a1d4f41c8f",
+      "id": "00000003-0000-4000-8000-01a1d96de096",
+      "name": "관심 종목 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 매체 RSS와 Google News 검색 주소를 요청 목록으로 만듭니다.\nconst c = $('설정').first().json;\nconst out = [];\nfor (const f of c.feeds) {\n  out.push({ json: { kind: 'rss', label: f.name, url: f.url, source: f.source, market: f.market, trust: f.trust, grade: f.grade } });\n}\nfor (const g of c.googleNews) {\n  const q = encodeURIComponent(`${g.q} when:1d`);\n  const loc = g.market === 'KR' ? 'hl=ko&gl=KR&ceid=KR:ko' : 'hl=en-US&gl=US&ceid=US:en';\n  out.push({ json: { kind: 'gnews', label: `Google News: ${g.q}`, url: `https://news.google.com/rss/search?q=${q}&${loc}`, market: g.market } });\n}\n// 관심 종목 중 미국 종목: Google News 영어 검색\nconst watch = (($('관심 종목 조회').first().json || {}).watchlist || []).slice(0, c.watchNewsMax);\nfor (const w of watch) {\n  if (w.market !== 'US') continue;\n  const q = encodeURIComponent(`${w.code} stock when:1d`);\n  out.push({ json: { kind: 'gnews', label: `관심 종목: ${w.code}`, url: `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`, market: 'US', ticker: { market: 'US', code: w.code, name: w.label || w.name } } });\n}\nreturn out;\n"
+      },
+      "id": "00000004-0000-4000-8000-01a1d96de096",
       "name": "요청 목록",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
+        720,
         300
       ]
     },
@@ -81,26 +104,26 @@
           }
         }
       },
-      "id": "00000004-0000-4000-8000-01a1d4f41c8f",
+      "id": "00000005-0000-4000-8000-01a1d96de096",
       "name": "RSS 읽기",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        720,
+        960,
         300
       ],
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "// 네이버 뉴스 검색 요청. 검색어가 없으면 건너뛰기 표시가 붙은 요청 1개만 보냅니다.\nconst c = $('설정').first().json;\nconst qs = c.naverQueries || [];\nif (!qs.length) {\n  return [{ json: { skip: true, url: 'https://openapi.naver.com/v1/search/news.json?query=skip&display=1' } }];\n}\nreturn qs.map((q) => ({\n  json: {\n    kind: 'naver',\n    label: `네이버: ${q}`,\n    query: q,\n    url: `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(q)}&display=${c.naverDisplay || 30}&sort=date`,\n  },\n}));\n"
+        "jsCode": "// 네이버 뉴스 검색 요청 (일반 검색어 + 국내 관심 종목). 둘 다 없으면 건너뛰기 표시가 붙은 요청 1개만 보냅니다.\nconst c = $('설정').first().json;\nconst watch = (($('관심 종목 조회').first().json || {}).watchlist || []).slice(0, c.watchNewsMax).filter((w) => w.market === 'KR');\nconst reqs = (c.naverQueries || []).map((q) => ({ q, display: c.naverDisplay || 30 }));\nfor (const w of watch) reqs.push({ q: w.label || w.name, display: c.watchNaverDisplay || 10, ticker: { market: 'KR', code: w.code, name: w.label || w.name } });\nif (!reqs.length) {\n  return [{ json: { skip: true, url: 'https://openapi.naver.com/v1/search/news.json?query=skip&display=1' } }];\n}\nreturn reqs.map((r) => ({\n  json: {\n    kind: 'naver',\n    label: r.ticker ? `관심 종목: ${r.q}` : `네이버: ${r.q}`,\n    query: r.q,\n    ticker: r.ticker,\n    url: `https://openapi.naver.com/v1/search/news.json?query=${encodeURIComponent(r.q)}&display=${r.display}&sort=date`,\n  },\n}));\n"
       },
-      "id": "00000005-0000-4000-8000-01a1d4f41c8f",
+      "id": "00000006-0000-4000-8000-01a1d96de096",
       "name": "네이버 요청",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        960,
+        1200,
         300
       ]
     },
@@ -127,26 +150,26 @@
           }
         }
       },
-      "id": "00000006-0000-4000-8000-01a1d4f41c8f",
+      "id": "00000007-0000-4000-8000-01a1d96de096",
       "name": "네이버 뉴스",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1200,
+        1440,
         300
       ],
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "// RSS·Atom·네이버 응답을 읽어 기사 후보로 정리합니다.\n// n8n Code 노드 실행 환경에는 URL, Buffer가 없을 수 있어 모두 문자열로 처리합니다.\nconst c = $('설정').first().json;\nconst now = Date.now();\nconst since = now - c.collectHours * 3600_000;\n\n// ---------- 도우미 ----------\nconst NAMED = { amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\", nbsp: ' ', middot: '·', hellip: '…', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', ndash: '–', mdash: '—' };\nfunction decode(s) {\n  if (!s) return '';\n  return String(s)\n    .replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, '$1')\n    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))\n    .replace(/&#(\\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))\n    .replace(/&([a-z]+);/gi, (m, n) => (NAMED[n.toLowerCase()] !== undefined ? NAMED[n.toLowerCase()] : m));\n}\nconst strip = (s) => s.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();\nconst text = (s) => strip(decode(strip(decode(s))));\nfunction tag(block, name) {\n  const m = block.match(new RegExp(`<${name}(?:\\\\s[^>]*)?>([\\\\s\\\\S]*?)</${name}>`, 'i'));\n  return m ? m[1] : '';\n}\nfunction linkOf(block) {\n  let m = block.match(/<link[^>]*rel=[\"']alternate[\"'][^>]*href=[\"']([^\"']+)[\"']/i) || block.match(/<link[^>]*href=[\"']([^\"']+)[\"'][^>]*\\/?>/i);\n  if (m) return decode(m[1]).trim();\n  const l = decode(tag(block, 'link')).trim();\n  if (/^https?:\\/\\//i.test(l)) return l;\n  const g = decode(tag(block, 'guid')).trim();\n  return /^https?:\\/\\//i.test(g) ? g : '';\n}\nfunction hostOf(u) {\n  const m = String(u).match(/^https?:\\/\\/([^/?#:]+)/i);\n  return m ? m[1].toLowerCase().replace(/^www\\./, '').replace(/^m\\./, '') : '';\n}\n// 중복 비교용 키 (링크 자체는 원문 그대로 저장)\nfunction urlKey(u) {\n  let s = String(u).trim().replace(/^https?:\\/\\//i, '').replace(/#.*$/, '');\n  let q = '';\n  const qi = s.indexOf('?');\n  if (qi >= 0) { q = s.slice(qi + 1); s = s.slice(0, qi); }\n  const parts = s.split('/');\n  const host = parts.shift().toLowerCase().replace(/^www\\./, '').replace(/^m\\./, '');\n  const path = parts.join('/').replace(/\\/+$/, '');\n  const params = q.split('&').filter((p) => p && !/^(utm_|fbclid|gclid|ref=|from=|cmpid|ocid|rss=|feed=)/i.test(p)).sort();\n  return host + '/' + path + (params.length ? '?' + params.join('&') : '');\n}\nfunction sourceInfo(name) {\n  const v = c.sources[name] || c.unknownSource;\n  return { trust: v[0], grade: v[1] };\n}\nfunction toIso(s) {\n  const t = Date.parse(String(s).trim());\n  return Number.isFinite(t) ? new Date(t).toISOString() : null;\n}\nfunction paired(item) {\n  const p = item.pairedItem;\n  if (Array.isArray(p)) return p[0] ? p[0].item : 0;\n  return p && typeof p.item === 'number' ? p.item : 0;\n}\n\nconst report = [];\nconst cands = [];\nconst push = (req, a) => {\n  if (!a.url || !/^https?:\\/\\//i.test(a.url)) { req._r.bad++; return; }\n  if (!a.published_at) { req._r.noDate++; return; }\n  const t = Date.parse(a.published_at);\n  if (t < since || t > now + 3600_000) { req._r.old++; return; }\n  a.url_key = urlKey(a.url);\n  a.title = a.title.slice(0, 300);\n  a.snippet = (a.snippet || '').slice(0, 500);\n  cands.push(a);\n  req._r.ok++;\n};\n\n// ---------- 1) RSS·Google News ----------\nconst rssReqs = $('요청 목록').all().map((i) => i.json);\nfor (const it of $('RSS 읽기').all()) {\n  const req = rssReqs[paired(it)] || {};\n  const r = { label: req.label || '?', status: '', ok: 0, old: 0, bad: 0, noDate: 0 };\n  req._r = r;\n  report.push(r);\n  const j = it.json || {};\n  const code = j.statusCode;\n  const body = typeof j.body === 'string' ? j.body : typeof j.data === 'string' ? j.data : '';\n  if (j.error || !code || code >= 400 || !body) {\n    r.status = `실패 ${code || (j.error && (j.error.code || j.error.message)) || ''}`.trim();\n    continue;\n  }\n  r.status = '성공';\n  const blocks = body.match(/<item[\\s>][\\s\\S]*?<\\/item>/gi) || body.match(/<entry[\\s>][\\s\\S]*?<\\/entry>/gi) || [];\n  const perSource = [];\n  for (const b of blocks) {\n    let title = text(tag(b, 'title'));\n    if (!title) continue;\n    const url = linkOf(b);\n    const date = toIso(tag(b, 'pubDate') || tag(b, 'published') || tag(b, 'updated') || tag(b, 'dc:date'));\n    const snippet = text(tag(b, 'description') || tag(b, 'summary') || tag(b, 'content'));\n    let source = req.source, trust = req.trust, grade = req.grade;\n    if (req.kind === 'gnews') {\n      source = text(tag(b, 'source')) || 'Google News';\n      if (title.endsWith(` - ${source}`)) title = title.slice(0, -(source.length + 3));\n      ({ trust, grade } = sourceInfo(source));\n    }\n    perSource.push({ url, title, source, source_trust: trust, source_grade: grade, tier: 'T2', market: req.market, feed_kind: req.kind, published_at: date, snippet: req.kind === 'gnews' ? '' : snippet });\n  }\n  perSource.slice(0, 200).forEach((a) => push(req, a));\n}\n\n// ---------- 2) 네이버 ----------\nconst nvReqs = $('네이버 요청').all().map((i) => i.json);\nfor (const it of $('네이버 뉴스').all()) {\n  const req = nvReqs[paired(it)] || {};\n  if (req.skip) continue;\n  const r = { label: req.label || '네이버', status: '', ok: 0, old: 0, bad: 0, noDate: 0 };\n  req._r = r;\n  report.push(r);\n  const j = it.json || {};\n  let body = j.body !== undefined ? j.body : j;\n  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }\n  if (j.error || (j.statusCode && j.statusCode >= 400) || !body || !Array.isArray(body.items)) {\n    r.status = `실패 ${j.statusCode || (j.error && j.error.message) || ''}`.trim();\n    continue;\n  }\n  r.status = '성공';\n  for (const n of body.items) {\n    const url = (n.originallink || n.link || '').trim();\n    const host = hostOf(url);\n    const source = c.naverDomains[host] || c.naverDomains[host.split('.').slice(-3).join('.')] || c.naverDomains[host.split('.').slice(-2).join('.')] || host;\n    const { trust, grade } = sourceInfo(source);\n    push(req, { url, title: text(n.title), source, source_trust: trust, source_grade: grade, tier: 'T2', market: 'KR', feed_kind: 'naver', published_at: toIso(n.pubDate), snippet: text(n.description) });\n  }\n}\n\nconst okFeeds = report.filter((r) => r.status === '성공').length;\nif (report.length && okFeeds === 0) {\n  throw new Error('모든 피드 요청이 실패했습니다.\\n' + report.map((r) => `${r.label}: ${r.status}`).join('\\n'));\n}\n\n// 같은 실행 안의 중복 제거 (신뢰도 높은 매체 우선)\nconst KIND = { rss: 0, naver: 1, gnews: 2 }; // 같은 기사면 매체 RSS의 제목·요약을 우선\ncands.sort((a, b) => b.source_trust - a.source_trust || KIND[a.feed_kind] - KIND[b.feed_kind] || b.published_at.localeCompare(a.published_at));\nconst seen = new Set();\nconst uniq = [];\nfor (const a of cands) {\n  if (seen.has(a.url_key)) continue;\n  seen.add(a.url_key);\n  uniq.push(a);\n}\n\nif (!uniq.length) return []; // 새 기사 없음: 정상, 여기서 조용히 끝남\nreturn [{ json: { candidates: uniq, keys: uniq.map((a) => a.url_key), report } }];\n"
+        "jsCode": "// RSS·Atom·네이버 응답을 읽어 기사 후보로 정리합니다.\n// n8n Code 노드 실행 환경에는 URL, Buffer가 없을 수 있어 모두 문자열로 처리합니다.\nconst c = $('설정').first().json;\nconst now = Date.now();\nconst since = now - c.collectHours * 3600_000;\n\n// ---------- 도우미 ----------\nconst NAMED = { amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\", nbsp: ' ', middot: '·', hellip: '…', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', ndash: '–', mdash: '—' };\nfunction decode(s) {\n  if (!s) return '';\n  return String(s)\n    .replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, '$1')\n    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))\n    .replace(/&#(\\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))\n    .replace(/&([a-z]+);/gi, (m, n) => (NAMED[n.toLowerCase()] !== undefined ? NAMED[n.toLowerCase()] : m));\n}\nconst strip = (s) => s.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();\nconst text = (s) => strip(decode(strip(decode(s))));\nfunction tag(block, name) {\n  const m = block.match(new RegExp(`<${name}(?:\\\\s[^>]*)?>([\\\\s\\\\S]*?)</${name}>`, 'i'));\n  return m ? m[1] : '';\n}\nfunction linkOf(block) {\n  let m = block.match(/<link[^>]*rel=[\"']alternate[\"'][^>]*href=[\"']([^\"']+)[\"']/i) || block.match(/<link[^>]*href=[\"']([^\"']+)[\"'][^>]*\\/?>/i);\n  if (m) return decode(m[1]).trim();\n  const l = decode(tag(block, 'link')).trim();\n  if (/^https?:\\/\\//i.test(l)) return l;\n  const g = decode(tag(block, 'guid')).trim();\n  return /^https?:\\/\\//i.test(g) ? g : '';\n}\nfunction hostOf(u) {\n  const m = String(u).match(/^https?:\\/\\/([^/?#:]+)/i);\n  return m ? m[1].toLowerCase().replace(/^www\\./, '').replace(/^m\\./, '') : '';\n}\n// 중복 비교용 키 (링크 자체는 원문 그대로 저장)\nfunction urlKey(u) {\n  let s = String(u).trim().replace(/^https?:\\/\\//i, '').replace(/#.*$/, '');\n  let q = '';\n  const qi = s.indexOf('?');\n  if (qi >= 0) { q = s.slice(qi + 1); s = s.slice(0, qi); }\n  const parts = s.split('/');\n  const host = parts.shift().toLowerCase().replace(/^www\\./, '').replace(/^m\\./, '');\n  const path = parts.join('/').replace(/\\/+$/, '');\n  const params = q.split('&').filter((p) => p && !/^(utm_|fbclid|gclid|ref=|from=|cmpid|ocid|rss=|feed=)/i.test(p)).sort();\n  return host + '/' + path + (params.length ? '?' + params.join('&') : '');\n}\nfunction sourceInfo(name) {\n  const v = c.sources[name] || c.unknownSource;\n  return { trust: v[0], grade: v[1] };\n}\nfunction toIso(s) {\n  const t = Date.parse(String(s).trim());\n  return Number.isFinite(t) ? new Date(t).toISOString() : null;\n}\nfunction paired(item) {\n  const p = item.pairedItem;\n  if (Array.isArray(p)) return p[0] ? p[0].item : 0;\n  return p && typeof p.item === 'number' ? p.item : 0;\n}\n\nconst report = [];\nconst cands = [];\nconst push = (req, a) => {\n  if (!a.url || !/^https?:\\/\\//i.test(a.url)) { req._r.bad++; return; }\n  if (!a.published_at) { req._r.noDate++; return; }\n  const t = Date.parse(a.published_at);\n  if (t < since || t > now + 3600_000) { req._r.old++; return; }\n  a.url_key = urlKey(a.url);\n  a.tickers = req.ticker ? [req.ticker] : [];\n  a.title = a.title.slice(0, 300);\n  a.snippet = (a.snippet || '').slice(0, 500);\n  cands.push(a);\n  req._r.ok++;\n};\n\n// ---------- 1) RSS·Google News ----------\nconst rssReqs = $('요청 목록').all().map((i) => i.json);\nfor (const it of $('RSS 읽기').all()) {\n  const req = rssReqs[paired(it)] || {};\n  const r = { label: req.label || '?', status: '', ok: 0, old: 0, bad: 0, noDate: 0 };\n  req._r = r;\n  report.push(r);\n  const j = it.json || {};\n  const code = j.statusCode;\n  const body = typeof j.body === 'string' ? j.body : typeof j.data === 'string' ? j.data : '';\n  if (j.error || !code || code >= 400 || !body) {\n    r.status = `실패 ${code || (j.error && (j.error.code || j.error.message)) || ''}`.trim();\n    continue;\n  }\n  r.status = '성공';\n  const blocks = body.match(/<item[\\s>][\\s\\S]*?<\\/item>/gi) || body.match(/<entry[\\s>][\\s\\S]*?<\\/entry>/gi) || [];\n  const perSource = [];\n  for (const b of blocks) {\n    let title = text(tag(b, 'title'));\n    if (!title) continue;\n    const url = linkOf(b);\n    const date = toIso(tag(b, 'pubDate') || tag(b, 'published') || tag(b, 'updated') || tag(b, 'dc:date'));\n    const snippet = text(tag(b, 'description') || tag(b, 'summary') || tag(b, 'content'));\n    let source = req.source, trust = req.trust, grade = req.grade;\n    if (req.kind === 'gnews') {\n      source = text(tag(b, 'source')) || 'Google News';\n      if (title.endsWith(` - ${source}`)) title = title.slice(0, -(source.length + 3));\n      ({ trust, grade } = sourceInfo(source));\n    }\n    perSource.push({ url, title, source, source_trust: trust, source_grade: grade, tier: 'T2', market: req.market, feed_kind: req.kind, published_at: date, snippet: req.kind === 'gnews' ? '' : snippet });\n  }\n  perSource.slice(0, 200).forEach((a) => push(req, a));\n}\n\n// ---------- 2) 네이버 ----------\nconst nvReqs = $('네이버 요청').all().map((i) => i.json);\nfor (const it of $('네이버 뉴스').all()) {\n  const req = nvReqs[paired(it)] || {};\n  if (req.skip) continue;\n  const r = { label: req.label || '네이버', status: '', ok: 0, old: 0, bad: 0, noDate: 0 };\n  req._r = r;\n  report.push(r);\n  const j = it.json || {};\n  let body = j.body !== undefined ? j.body : j;\n  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }\n  if (j.error || (j.statusCode && j.statusCode >= 400) || !body || !Array.isArray(body.items)) {\n    r.status = `실패 ${j.statusCode || (j.error && j.error.message) || ''}`.trim();\n    continue;\n  }\n  r.status = '성공';\n  for (const n of body.items) {\n    const url = (n.originallink || n.link || '').trim();\n    const host = hostOf(url);\n    const source = c.naverDomains[host] || c.naverDomains[host.split('.').slice(-3).join('.')] || c.naverDomains[host.split('.').slice(-2).join('.')] || host;\n    const { trust, grade } = sourceInfo(source);\n    push(req, { url, title: text(n.title), source, source_trust: trust, source_grade: grade, tier: 'T2', market: 'KR', feed_kind: 'naver', published_at: toIso(n.pubDate), snippet: text(n.description) });\n  }\n}\n\nconst okFeeds = report.filter((r) => r.status === '성공').length;\nif (report.length && okFeeds === 0) {\n  throw new Error('모든 피드 요청이 실패했습니다.\\n' + report.map((r) => `${r.label}: ${r.status}`).join('\\n'));\n}\n\n// 같은 실행 안의 중복 제거 (신뢰도 높은 매체 우선)\nconst KIND = { rss: 0, naver: 1, gnews: 2 }; // 같은 기사면 매체 RSS의 제목·요약을 우선\ncands.sort((a, b) => b.source_trust - a.source_trust || KIND[a.feed_kind] - KIND[b.feed_kind] || b.published_at.localeCompare(a.published_at));\nconst seen = new Set();\nconst uniq = [];\nconst byKey = {};\nfor (const a of cands) {\n  const kept = byKey[a.url_key];\n  if (kept) { // 같은 기사: 관심 종목 표시만 합침\n    for (const t of a.tickers) if (!kept.tickers.some((x) => x.code === t.code)) kept.tickers.push(t);\n    continue;\n  }\n  byKey[a.url_key] = a;\n  uniq.push(a);\n}\n\nif (!uniq.length) return []; // 새 기사 없음: 정상, 여기서 조용히 끝남\nreturn [{ json: { candidates: uniq, keys: uniq.map((a) => a.url_key), report } }];\n"
       },
-      "id": "00000007-0000-4000-8000-01a1d4f41c8f",
+      "id": "00000008-0000-4000-8000-01a1d96de096",
       "name": "기사 정리",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1440,
+        1680,
         300
       ]
     },
@@ -163,12 +186,12 @@
           "timeout": 30000
         }
       },
-      "id": "00000008-0000-4000-8000-01a1d4f41c8f",
+      "id": "00000009-0000-4000-8000-01a1d96de096",
       "name": "이미 저장된 기사",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1680,
+        1920,
         300
       ]
     },
@@ -176,12 +199,12 @@
       "parameters": {
         "jsCode": "// 이미 저장된 기사를 빼고, 피드당·전체 한도를 적용합니다.\nconst c = $('설정').first().json;\nconst { candidates } = $('기사 정리').first().json;\nconst res = $input.first().json || {};\nconst existing = new Set(Array.isArray(res.keys) ? res.keys : []);\n\nconst fresh = candidates.filter((a) => !existing.has(a.url_key));\nfresh.sort((a, b) => b.published_at.localeCompare(a.published_at));\n\nconst per = {};\nconst picked = [];\nfor (const a of fresh) {\n  const k = `${a.feed_kind}:${a.source}`;\n  per[k] = (per[k] || 0) + 1;\n  if (per[k] > c.perSourceMax) continue;\n  picked.push(a);\n  if (picked.length >= c.totalMax) break;\n}\nif (!picked.length) return [];\nreturn picked.map((a) => ({ json: a }));\n"
       },
-      "id": "00000009-0000-4000-8000-01a1d4f41c8f",
+      "id": "0000000a-0000-4000-8000-01a1d96de096",
       "name": "새 기사 고르기",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1920,
+        2160,
         300
       ]
     },
@@ -215,26 +238,26 @@
           }
         }
       },
-      "id": "0000000a-0000-4000-8000-01a1d4f41c8f",
+      "id": "0000000b-0000-4000-8000-01a1d96de096",
       "name": "링크 확인",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2160,
+        2400,
         300
       ],
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "// \"링크 확인\" 결과로 열리지 않는 기사를 빼고 저장할 행을 만듭니다.\n// 404·410·5xx·연결 실패는 제외, 봇 차단(401·403·405·429)은 브라우저에서 열리므로 유지\nfunction paired(item) {\n  const p = item.pairedItem;\n  if (Array.isArray(p)) return p[0] ? p[0].item : 0;\n  return p && typeof p.item === 'number' ? p.item : 0;\n}\nconst arts = $('새 기사 고르기').all().map((i) => i.json);\nconst rows = [];\nconst dead = [];\nfor (const it of $input.all()) {\n  const a = arts[paired(it)];\n  if (!a) continue;\n  const j = it.json || {};\n  const code = j.statusCode;\n  const bad = j.error || !code || code === 404 || code === 410 || code >= 500;\n  if (bad) { dead.push({ url: a.url, status: code || 'error' }); continue; }\n  rows.push({\n    url_key: a.url_key, url: a.url, title: a.title, source: a.source, source_trust: a.source_trust,\n    source_grade: a.source_grade, tier: a.tier, market: a.market, feed_kind: a.feed_kind,\n    published_at: a.published_at, snippet: a.snippet, status: 'new',\n  });\n}\nif (!rows.length) return [];\nreturn [{ json: { rows, dead } }];\n"
+        "jsCode": "// \"링크 확인\" 결과로 열리지 않는 기사를 빼고 저장할 행을 만듭니다.\n// 404·410·5xx·연결 실패는 제외, 봇 차단(401·403·405·429)은 브라우저에서 열리므로 유지\nfunction paired(item) {\n  const p = item.pairedItem;\n  if (Array.isArray(p)) return p[0] ? p[0].item : 0;\n  return p && typeof p.item === 'number' ? p.item : 0;\n}\nconst arts = $('새 기사 고르기').all().map((i) => i.json);\nconst rows = [];\nconst dead = [];\nfor (const it of $input.all()) {\n  const a = arts[paired(it)];\n  if (!a) continue;\n  const j = it.json || {};\n  const code = j.statusCode;\n  const bad = j.error || !code || code === 404 || code === 410 || code >= 500;\n  if (bad) { dead.push({ url: a.url, status: code || 'error' }); continue; }\n  rows.push({\n    url_key: a.url_key, url: a.url, title: a.title, source: a.source, source_trust: a.source_trust,\n    source_grade: a.source_grade, tier: a.tier, market: a.market, feed_kind: a.feed_kind,\n    published_at: a.published_at, snippet: a.snippet, tickers: a.tickers || [], status: 'new',\n  });\n}\nif (!rows.length) return [];\nreturn [{ json: { rows, dead } }];\n"
       },
-      "id": "0000000b-0000-4000-8000-01a1d4f41c8f",
+      "id": "0000000c-0000-4000-8000-01a1d96de096",
       "name": "저장 준비",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2400,
+        2640,
         300
       ]
     },
@@ -260,12 +283,12 @@
           "timeout": 30000
         }
       },
-      "id": "0000000c-0000-4000-8000-01a1d4f41c8f",
+      "id": "0000000d-0000-4000-8000-01a1d96de096",
       "name": "Supabase 저장",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2640,
+        2880,
         300
       ]
     }
@@ -283,6 +306,17 @@
       ]
     },
     "설정": {
+      "main": [
+        [
+          {
+            "node": "관심 종목 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "관심 종목 조회": {
       "main": [
         [
           {
