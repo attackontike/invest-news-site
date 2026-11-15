@@ -1,4 +1,4 @@
-# 투자 뉴스 브리프 (3-B단계까지)
+# 투자 뉴스 브리프 (3단계까지)
 
 국내·미국 시장 뉴스를 매시간 모아 Supabase에 쌓고, 하루 4번(07:00, 12:00, 16:30, 22:00) Gemini로 요약해 Astro 사이트와 Discord에 게시합니다. 요약한 기사와 브리핑은 지식베이스(pgvector)에도 쌓입니다.
 
@@ -37,6 +37,12 @@
 - `supabase/schema-3b.sql`: `research_context` 함수
 - 자격 증명 GitHub Models, Groq (둘 다 Header Auth, `Authorization: Bearer 토큰`) 추가
 - 설치 순서는 "설치 가이드 (3-B)"를 따르세요
+
+## 3-C에서 추가된 것
+
+- **`/ask question:질문 (days:기간)`**: 지식베이스를 종목 검색 + 전체 검색으로 찾아, 근거 번호(S1…)를 원문 링크로 바꾼 답변을 Discord로. 답변은 지식베이스에 다시 저장하지 않음
+- `n8n/ask.json` (17노드), `discord-command.json` 갱신 (질문 답변 실행 연결), 등록 스크립트에 `/ask` 추가
+- 새 키·스키마·사이트 변경 없음. 설치 순서는 "설치 가이드 (3-C)"
 
 ## 폴더
 

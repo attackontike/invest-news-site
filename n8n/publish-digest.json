@@ -16,7 +16,7 @@
           ]
         }
       },
-      "id": "0000000e-0000-4000-8000-01a1dee4dd3f",
+      "id": "0000000e-0000-4000-8000-01a1dfae619e",
       "name": "게시 시각",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -29,7 +29,7 @@
       "parameters": {
         "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nconst cfg = {\n  githubOwner: 'YOUR-GITHUB-ID',\n  githubRepo: 'invest-news-site',\n  githubBranch: 'main',\n  siteUrl: 'https://invest-news-site.vercel.app',\n  supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n\n  geminiModel: 'gemini-3.8-flash', // 404 no longer available이면 오류가 알려 주는 새 이름으로\n  fallbackModel: 'gemini-flash-lite-latest', // 기본 모델이 3번 실패하면 사용\n  embeddingModel: 'gemini-embedding-001', // 지식베이스용\n  embedDim: 768, // Supabase kb_chunks.embedding 크기와 같아야 함\n\n  discordWebhookUrl: '', // #브리핑 채널 웹훅. 비우면 알림을 건너뜀\n\n  vaultRepo: 'invest-vault', // 옵시디안 볼트 저장소(비공개, githubOwner 계정). 비우면 노트 생성을 건너뜀\n  vaultBranch: 'main',\n\n  maxPerEdition: 90, // 한 회차에 요약할 최대 기사 수\n  summaryBatch: 15, // Gemini 요약 요청 1개에 담을 기사 수\n  staleHours: 72, // 이보다 오래된 미처리 기사는 요약하지 않고 건너뜀\n};\n\n// 회차 이름: 정해진 시각이면 그 이름, 수동 실행이면 실제 시각\nconst now = new Date();\nconst kst = new Date(now.getTime() + 9 * 3600_000);\nconst ymd = kst.toISOString().slice(0, 10);\nconst t = kst.getUTCHours() * 60 + kst.getUTCMinutes();\nconst slot = ['07:00', '12:00', '16:30', '22:00'].find((s) => {\n  const m = Number(s.slice(0, 2)) * 60 + Number(s.slice(3));\n  return t >= m && t - m < 30;\n});\nconst edition = slot || kst.toISOString().slice(11, 16);\n\nreturn [{ json: { ...cfg, today: ymd, edition, nowIso: now.toISOString() } }];\n"
       },
-      "id": "0000000f-0000-4000-8000-01a1dee4dd3f",
+      "id": "0000000f-0000-4000-8000-01a1dfae619e",
       "name": "설정",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -48,7 +48,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000010-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000010-0000-4000-8000-01a1dfae619e",
       "name": "새 기사 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -68,7 +68,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000011-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000011-0000-4000-8000-01a1dfae619e",
       "name": "오늘 게시분 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -89,7 +89,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000012-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000012-0000-4000-8000-01a1dfae619e",
       "name": "오늘 브리핑 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -104,7 +104,7 @@
       "parameters": {
         "jsCode": "// Gemini 요청을 만듭니다: 분류 요청 1개 + 요약 요청 여러 개(summaryBatch건씩)\n// Gemini는 기사 번호(id)로만 답하고 URL은 만들지 않습니다.\nconst c = $('설정').first().json;\nconst now = Date.parse(c.nowIso);\nconst fresh = $('새 기사 조회').all().map((i) => i.json).filter((r) => r && r.id);\nconst today = $('오늘 게시분 조회').all().map((i) => i.json).filter((r) => r && r.id);\n\nconst skipIds = [];\nconst usable = [];\nfor (const r of fresh) {\n  if (now - Date.parse(r.published_at) > c.staleHours * 3600_000) skipIds.push(r.id);\n  else usable.push(r);\n}\nusable.sort((a, b) => b.published_at.localeCompare(a.published_at));\nconst pick = usable.slice(0, c.maxPerEdition);\nif (!pick.length) return []; // 새 기사 없음: 이번 회차는 조용히 끝남\n\nconst mk = (m) => (m === 'KR' ? '국내' : '미국·해외');\nconst genCfg = { responseMimeType: 'application/json', maxOutputTokens: 65536, thinkingConfig: { thinkingLevel: 'low' } };\nconst req = (requestId, text) => ({ requestId, body: { contents: [{ role: 'user', parts: [{ text }] }], generationConfig: genCfg } });\n\n// ---- 분류 요청 ----\nconst stories = {};\nfor (const r of today) if (r.story_key && !stories[r.story_key]) stories[r.story_key] = r.title_ko || r.title;\nconst earlier = Object.entries(stories).slice(0, 150).map(([k, t]) => `${k}: ${t}`).join('\\n') || '(없음)';\nconst list = pick.map((r) => `[${r.id}] (${mk(r.market)}) ${r.title} — ${r.source}`).join('\\n');\nconst classifyText = `너는 한국 개인 투자자를 위한 시장 뉴스 편집자다. 아래 \"새 기사\"를 같은 사건끼리 묶고 중요도를 매긴 뒤, 오늘의 시장 브리핑을 써라.\n\n규칙\n- storyKey: 같은 사건이면 같은 키. 영어 소문자·숫자·하이픈 2~5단어 (예: fed-rate-hold-nov). \"오늘 앞서 나온 사건\"과 같은 사건이면 그 키를 그대로 써라.\n- impact: 0~100. 시장 전체·주요 종목 주가에 미칠 영향과 화제성. 단순 시황 반복·홍보성 기사는 낮게.\n- briefing: 4~6줄. 각 줄은 \"**핵심어**: 한 문장\" 형식의 한국어. 국내와 미국·해외를 고르게 다루고, 사실만 쓰며 매수·매도 권유나 예측은 쓰지 마라. URL을 쓰지 마라.\n- 모든 새 기사 id를 stories에 빠짐없이 넣어라.\n\n출력: JSON 하나만.\n{\"requestId\":\"classify\",\"stories\":[{\"id\":123,\"storyKey\":\"...\",\"impact\":60}],\"briefing\":[\"**...**: ...\"]}\n\n오늘 앞서 나온 사건 (storyKey: 대표 제목)\n${earlier}\n\n새 기사\n${list}`;\n\nconst out = [{ json: { ...req('classify', classifyText), meta: { pickIds: pick.map((r) => r.id), skipIds } } }];\n\n// ---- 요약 요청 ----\nfor (let i = 0; i < pick.length; i += c.summaryBatch) {\n  const batch = pick.slice(i, i + c.summaryBatch);\n  const n = i / c.summaryBatch + 1;\n  const arts = batch\n    .map((r) => `[${r.id}] (${mk(r.market)}) ${r.source}: ${r.title}${r.snippet ? `\\n내용: ${r.snippet}` : ''}`)\n    .join('\\n\\n');\n  const text = `너는 한국 개인 투자자를 위한 시장 뉴스 요약가다. 아래 기사마다 다음을 한국어로 작성하라.\n\n- titleKo: 한국어 제목 (국내 기사는 원제를 다듬기만, 해외 기사는 번역). 60자 이내.\n- summary: 2~3문장 요약. 기사에 있는 사실만. 내용이 제목뿐이면 제목에서 알 수 있는 것만 1문장.\n- keyPoints: 투자자가 알아야 할 핵심 1~3개 (수치·일정·주체 중심). 없으면 빈 배열.\n- tags: 다음 중 1~3개 [증시, 금리, 환율, 물가, 고용, 실적, 반도체, 2차전지, AI, 자동차, 바이오, 에너지, 원자재, 부동산, 정책, 규제, 무역, 지정학, 가상자산, 기업, 공모·상장]\n- companies: 기사의 중심이 되는 상장 기업 (없으면 빈 배열). 국내 기업은 {\"name\": 한국거래소 상장 종목명(예: 삼성전자, SK하이닉스, LG에너지솔루션), \"market\": \"KR\"}, 미국 상장 기업은 {\"name\": 회사명, \"market\": \"US\", \"ticker\": 티커(예: NVDA)}. 확실하지 않으면 ticker를 빼라. 국내 종목코드는 쓰지 마라.\n- sentiment: 관련 기업·시장에 우호적인 소식이면 \"호재\", 불리하면 \"악재\", 판단이 어렵거나 중립적이면 \"중립\". 기사 논조 분류이며 투자 의견이 아니다.\n- credibility: 1~5. 공식 발표·1차 자료 인용·주요 통신사 5, 주요 언론의 사실 보도 4, 해설·전망 기사 3, 출처 불명·추측·홍보성 1~2.\n\n규칙: 모든 기사 id에 대해 빠짐없이 답하라. URL을 쓰지 마라. 매체가 DART·SEC EDGAR·Federal Reserve인 항목은 공시·공식 발표이므로 제목에 담긴 사실만 요약하고 credibility는 5로 하라.\n출력: JSON 하나만.\n{\"requestId\":\"summary-${n}\",\"items\":[{\"id\":123,\"titleKo\":\"...\",\"summary\":\"...\",\"keyPoints\":[\"...\"],\"tags\":[\"...\"],\"companies\":[{\"name\":\"...\",\"market\":\"US\",\"ticker\":\"...\"}],\"sentiment\":\"중립\",\"credibility\":4}]}\n\n기사\n${arts}`;\n  out.push({ json: req(`summary-${n}`, text) });\n}\nreturn out;\n"
       },
-      "id": "00000013-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000013-0000-4000-8000-01a1dfae619f",
       "name": "프롬프트 생성",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -132,7 +132,7 @@
           "timeout": 240000
         }
       },
-      "id": "00000014-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000014-0000-4000-8000-01a1dfae619f",
       "name": "Gemini 요약·평가",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -164,7 +164,7 @@
           "timeout": 240000
         }
       },
-      "id": "00000015-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000015-0000-4000-8000-01a1dfae619f",
       "name": "Gemini 예비 모델",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -181,7 +181,7 @@
       "parameters": {
         "mode": "append"
       },
-      "id": "00000016-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000016-0000-4000-8000-01a1dfae619f",
       "name": "Gemini 결과 합치기",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
@@ -194,7 +194,7 @@
       "parameters": {
         "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// Gemini 응답을 읽어 분류·요약 결과를 정리하고, 종목 사전에서 찾아볼 회사명·티커를 모읍니다.\nfunction parseJson(t) {\n  t = String(t || '').trim().replace(/^```(?:json)?\\s*/i, '').replace(/```\\s*$/, '');\n  try { return JSON.parse(t); } catch (e) {}\n  const a = t.indexOf('{'), b = t.lastIndexOf('}');\n  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }\n  return null;\n}\nlet classify = null;\nconst sums = {};\nlet failed = 0;\nfor (const it of $input.all()) {\n  const j = it.json || {};\n  const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];\n  const obj = parseJson(parts.filter((p) => !p.thought).map((p) => p.text || '').join(''));\n  if (!obj) { failed++; continue; }\n  if (Array.isArray(obj.stories)) classify = obj;\n  if (Array.isArray(obj.items)) for (const s of obj.items) if (s && s.id !== undefined) sums[Number(s.id)] = s;\n}\nif (!classify && !Object.keys(sums).length) throw new Error('Gemini 요약이 모두 실패했습니다');\n\nconst keys = new Set();\nconst tickers = new Set();\nfor (const s of Object.values(sums)) {\n  for (const x of Array.isArray(s.companies) ? s.companies : []) {\n    if (!x || !x.name) continue;\n    const k = nameKey(x.name);\n    if (k) keys.add(k);\n    if (x.ticker) tickers.add(String(x.ticker).toUpperCase().trim());\n  }\n}\nreturn [{ json: { classify, sums, failed, keys: [...keys], tickers: [...tickers] } }];\n"
       },
-      "id": "00000017-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000017-0000-4000-8000-01a1dfae619f",
       "name": "Gemini 결과 정리",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -216,7 +216,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000018-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000018-0000-4000-8000-01a1dfae619f",
       "name": "종목 사전 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -229,7 +229,7 @@
       "parameters": {
         "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// Gemini 결과를 합쳐 기사 행, 다이제스트 Markdown, Discord 메시지, 지식베이스 조각을 만듭니다.\nconst c = $('설정').first().json;\nconst nowIso = c.nowIso;\nconst now = Date.parse(nowIso);\nconst meta = ($('프롬프트 생성').all().find((i) => i.json.requestId === 'classify') || { json: { meta: { pickIds: [], skipIds: [] } } }).json.meta;\n\n// ---------- Gemini 결과·종목 사전 ----------\nconst { classify, sums, failed } = $('Gemini 결과 정리').first().json;\nconst ctx = $input.first().json || {};\nconst symbols = Array.isArray(ctx.symbols) ? ctx.symbols : [];\nconst watchlist = Array.isArray(ctx.watchlist) ? ctx.watchlist : [];\nconst watchCodes = new Set(watchlist.map((w) => `${w.market}:${w.code}`));\nconst watchName = Object.fromEntries(watchlist.map((w) => [`${w.market}:${w.code}`, w.name]));\nconst usByTicker = Object.fromEntries(symbols.filter((x) => x.market === 'US').map((x) => [x.code, x]));\nconst byKey = {};\nfor (const x of symbols) (byKey[`${x.market}:${x.name_key}`] = byKey[`${x.market}:${x.name_key}`] || x);\n\n// Gemini가 쓴 회사명을 종목 사전과 맞춤. 사전에 없으면 코드 없이 이름만 남김\nfunction resolve(x) {\n  const market = x.market === 'US' ? 'US' : 'KR';\n  const tk = x.ticker ? String(x.ticker).toUpperCase().trim() : '';\n  let hit = market === 'US' && tk && usByTicker[tk] ? usByTicker[tk] : byKey[`${market}:${nameKey(x.name)}`];\n  if (!hit) return { market, name: String(x.name).slice(0, 40) };\n  const id = `${hit.market}:${hit.code}`;\n  return { market: hit.market, code: hit.code, name: watchName[id] || (hit.market === 'KR' ? hit.name : String(x.name).slice(0, 40)) };\n}\nfunction mergeTickers(a, b) {\n  const out = [];\n  for (const t of [...(a || []), ...(b || [])]) {\n    if (!t || !t.name) continue;\n    if (out.some((o) => (t.code && o.code === t.code && o.market === t.market) || (!t.code && !o.code && o.name === t.name))) continue;\n    out.push(t);\n  }\n  return out.slice(0, 5);\n}\n\nconst storyOf = {};\nfor (const s of (classify && classify.stories) || []) storyOf[Number(s.id)] = s;\n\n// ---------- 기사 행 만들기 ----------\nconst fresh = {};\nfor (const i of $('새 기사 조회').all()) if (i.json && i.json.id) fresh[i.json.id] = i.json;\nconst todayRows = $('오늘 게시분 조회').all().map((i) => i.json).filter((r) => r && r.id);\n\nconst clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));\nconst TAGS = new Set(['증시', '금리', '환율', '물가', '고용', '실적', '반도체', '2차전지', 'AI', '자동차', '바이오', '에너지', '원자재', '부동산', '정책', '규제', '무역', '지정학', '가상자산', '기업', '공모·상장']);\nconst TONES = new Set(['호재', '악재', '중립']);\nconst stripUrl = (s) => String(s || '').replace(/https?:\\/\\/\\S+/g, '').trim();\n\nconst processed = [];\nfor (const id of meta.pickIds) {\n  const r = fresh[id];\n  if (!r) continue;\n  const s = sums[id] || {};\n  const st = storyOf[id] || {};\n  const gemCred = Number(s.credibility) || r.source_trust;\n  processed.push({\n    ...r,\n    status: 'published',\n    title_ko: stripUrl(s.titleKo) || r.title,\n    summary: stripUrl(s.summary),\n    key_points: Array.isArray(s.keyPoints) ? s.keyPoints.map(stripUrl).filter(Boolean).slice(0, 3) : [],\n    tags: Array.isArray(s.tags) ? s.tags.filter((t) => TAGS.has(t)).slice(0, 3) : [],\n    tickers: mergeTickers(r.tickers, Array.isArray(s.companies) ? s.companies.filter((x) => x && x.name).slice(0, 4).map(resolve) : []),\n    sentiment: TONES.has(s.sentiment) ? s.sentiment : '중립',\n    credibility: clamp(Math.round((gemCred + r.source_trust) / 2), 1, 5),\n    impact: clamp(Math.max(Number(st.impact) || 40, r.tier === 'T1' && r.impact ? r.impact : 0), 0, 100), // 공시는 규칙 영향도를 최소값으로\n    story_key: (st.storyKey && String(st.storyKey).slice(0, 80)) || `a-${id}`,\n    digest_date: c.today,\n    edition: c.edition,\n    processed_at: nowIso,\n  });\n}\nconst skipped = meta.skipIds.map((id) => fresh[id]).filter(Boolean).map((r) => ({ ...r, status: 'skipped', processed_at: nowIso }));\n\n// ---------- 같은 사건 묶기, 점수 ----------\nconst all = [...todayRows.filter((r) => !meta.pickIds.includes(r.id)), ...processed];\nconst bySrc = {};\nfor (const r of all) (bySrc[r.story_key] = bySrc[r.story_key] || new Set()).add(r.source);\nconst BONUS = { '공시': 20, '통신사': 10, '해설': 5, '커뮤니티': 0 };\nfor (const r of all) {\n  const cov = bySrc[r.story_key].size;\n  const age = (now - Date.parse(r.published_at)) / 3600_000;\n  const recency = age < 12 ? 10 : age < 24 ? 5 : 0;\n  r.coverage = cov;\n  const watched = (r.tickers || []).some((t) => t.code && watchCodes.has(`${t.market}:${t.code}`));\n  r.importance = clamp(Math.round(0.5 * r.impact + (BONUS[r.source_grade] || 0) + 5 * Math.min(cov - 1, 4) + recency + (watched ? 15 : 0)), 0, 100);\n}\n\n// DB 저장용 (모든 행의 열을 똑같이 맞춤)\nconst COLS = ['url_key', 'url', 'title', 'source', 'source_trust', 'source_grade', 'tier', 'market', 'feed_kind', 'published_at', 'snippet', 'status',\n  'title_ko', 'summary', 'key_points', 'tags', 'tickers', 'sentiment', 'credibility', 'impact', 'importance', 'coverage', 'story_key', 'event_type',\n  'digest_date', 'edition', 'processed_at'];\nconst pickCols = (r) => Object.fromEntries(COLS.map((k) => [k, r[k] === undefined ? null : r[k]]));\nconst articleRows = [...all, ...skipped].map(pickCols);\n\n// ---------- 다이제스트: 사건마다 대표 기사 1건 ----------\nconst reps = {};\nfor (const r of all) {\n  const k = `${r.tier === 'T1' ? 'T1' : 'T2'}:${r.story_key}`; // 공시와 기사는 따로 대표를 뽑음\n  const cur = reps[k];\n  if (!cur || r.source_trust > cur.source_trust || (r.source_trust === cur.source_trust && r.importance > cur.importance)) reps[k] = r;\n}\nconst items = Object.values(reps)\n  .sort((a, b) => b.importance - a.importance)\n  .map((r) => ({\n    id: Number(r.id), tier: r.tier, market: r.market, title: r.title, titleKo: r.title_ko || r.title, source: r.source,\n    sourceGrade: r.source_grade, url: r.url, publishedAt: new Date(r.published_at).toISOString(), summary: r.summary || '',\n    keyPoints: r.key_points || [], tags: r.tags || [], tickers: r.tickers || [], sentiment: r.sentiment || '중립',\n    credibility: r.credibility || r.source_trust, importance: r.importance, coverage: r.coverage, storyKey: r.story_key, edition: r.edition || c.edition,\n    ...(r.event_type ? { eventType: r.event_type } : {}),\n  }));\n\n// ---------- 브리핑 ----------\nlet briefing = (classify && Array.isArray(classify.briefing) ? classify.briefing : []).map(stripUrl).filter(Boolean).slice(0, 6);\nif (!briefing.length) briefing = items.slice(0, 5).map((it) => `**${it.source}**: ${it.titleKo}`);\nconst editions = [];\nfor (const i of $('오늘 브리핑 조회').all()) {\n  const r = i.json;\n  if (!r || !r.report_key) continue;\n  const ed = r.report_key.split(':').slice(2).join(':');\n  if (ed === c.edition) continue;\n  let lines = [];\n  try { lines = JSON.parse(r.body); } catch (e) {}\n  editions.push({ edition: ed, generatedAt: new Date(r.created_at).toISOString(), briefing: lines });\n}\neditions.push({ edition: c.edition, generatedAt: nowIso, briefing });\neditions.sort((a, b) => a.generatedAt.localeCompare(b.generatedAt));\nconst reportRows = [{ report_key: `briefing:${c.today}:${c.edition}`, kind: 'briefing', title: `${c.today} ${c.edition} 브리핑`, body: JSON.stringify(briefing), tickers: [], created_at: nowIso }];\n\n// ---------- Markdown (JSON 한 줄 = YAML 한 항목) ----------\nconst md = [\n  '---',\n  `date: ${JSON.stringify(c.today)}`,\n  `generatedAt: ${JSON.stringify(nowIso)}`,\n  watchlist.length ? 'watchlist:' : 'watchlist: []',\n  ...watchlist.map((w) => `  - ${JSON.stringify({ market: w.market, code: w.code, name: w.name })}`),\n  'editions:',\n  ...editions.map((e) => `  - ${JSON.stringify(e)}`),\n  items.length ? 'items:' : 'items: []',\n  ...items.map((it) => `  - ${JSON.stringify(it)}`),\n  '---',\n  '',\n  ...briefing.map((l) => `- ${l}`),\n  '',\n].join('\\n');\n\n// UTF-8 → Base64 (Buffer 없이)\nfunction b64(str) {\n  const by = [];\n  for (let i = 0; i < str.length; i++) {\n    let cp = str.charCodeAt(i);\n    if (cp >= 0xd800 && cp < 0xdc00 && i + 1 < str.length) {\n      const lo = str.charCodeAt(i + 1);\n      if (lo >= 0xdc00 && lo < 0xe000) { cp = 0x10000 + ((cp - 0xd800) << 10) + (lo - 0xdc00); i++; }\n    }\n    if (cp < 0x80) by.push(cp);\n    else if (cp < 0x800) by.push(0xc0 | (cp >> 6), 0x80 | (cp & 63));\n    else if (cp < 0x10000) by.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n    else by.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n  }\n  const T = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';\n  let out = '';\n  for (let i = 0; i < by.length; i += 3) {\n    const n = (by[i] << 16) | ((by[i + 1] || 0) << 8) | (by[i + 2] || 0);\n    out += T[(n >> 18) & 63] + T[(n >> 12) & 63] + (i + 1 < by.length ? T[(n >> 6) & 63] : '=') + (i + 2 < by.length ? T[n & 63] : '=');\n  }\n  return out;\n}\n\n// ---------- Discord ----------\nconst recent = items.filter((it) => now - Date.parse(it.publishedAt) < 24 * 3600_000);\nconst line = (it) => `${it.sentiment === '호재' ? '🔴' : it.sentiment === '악재' ? '🔵' : '⚪'} [${it.titleKo.slice(0, 90)}](${it.url}) · ${it.source}`;\nconst filings = recent.filter((it) => it.tier === 'T1').slice(0, 5);\nconst kr = recent.filter((it) => it.tier !== 'T1' && it.market === 'KR').slice(0, 5);\nconst us = recent.filter((it) => it.tier !== 'T1' && it.market !== 'KR').slice(0, 5);\nconst embeds = [\n  { title: `${c.today} ${c.edition} 시장 브리핑`, url: c.siteUrl, color: 0x14213d, description: briefing.map((l) => `• ${l}`).join('\\n').slice(0, 4000) },\n];\nif (filings.length) embeds.push({ title: '주요 공시·공식 발표', color: 0x5b6676, description: filings.map(line).join('\\n').slice(0, 4000) });\nif (kr.length) embeds.push({ title: '국내 주요 뉴스', color: 0xd7263d, description: kr.map(line).join('\\n').slice(0, 4000) });\nif (us.length) embeds.push({ title: '미국·해외 주요 뉴스', color: 0x1b5fd1, description: us.map(line).join('\\n').slice(0, 4000) });\n\n// ---------- 지식베이스 조각 (이번 회차에 새로 요약한 기사 + 브리핑) ----------\nconst kbChunks = processed.map((r) => ({\n  chunk_key: `article:${r.id}`,\n  kind: r.tier === 'T1' ? 'filing' : 'news',\n  is_ai: false,\n  tier: r.tier,\n  source_grade: r.source_grade,\n  market: r.market,\n  tickers: r.tickers,\n  source: r.source,\n  url: r.url,\n  published_at: r.published_at,\n  content: [r.title_ko, r.title !== r.title_ko ? r.title : '', r.summary, ...(r.key_points || []).map((p) => `- ${p}`), r.tags.length ? `태그: ${r.tags.join(', ')}` : '', `논조: ${r.sentiment}`]\n    .filter(Boolean).join('\\n').slice(0, 4000),\n}));\nkbChunks.push({\n  chunk_key: `briefing:${c.today}:${c.edition}`, kind: 'briefing', is_ai: true, tier: null, source_grade: null, market: null, tickers: [],\n  source: '시장 브리핑', url: c.siteUrl, published_at: nowIso, content: `${c.today} ${c.edition} 시장 브리핑\\n${briefing.join('\\n')}`,\n});\n\nreturn [{\n  json: {\n    articleRows, reportRows, kbChunks,\n    noteData: { today: c.today, edition: c.edition, editions, items, watchlist },\n    path: `src/content/digest/${c.today}.md`,\n    content: b64(md),\n    commitMessage: `digest: ${c.today} ${c.edition} (${processed.length}건)`,\n    discord: { username: '투자 뉴스 브리프', embeds },\n    counts: { processed: processed.length, skipped: skipped.length, items: items.length, geminiFailed: failed },\n  },\n}];\n"
       },
-      "id": "00000019-0000-4000-8000-01a1dee4dd3f",
+      "id": "00000019-0000-4000-8000-01a1dfae619f",
       "name": "다이제스트 생성",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -260,7 +260,7 @@
           "timeout": 60000
         }
       },
-      "id": "0000001a-0000-4000-8000-01a1dee4dd3f",
+      "id": "0000001a-0000-4000-8000-01a1dfae619f",
       "name": "기사 저장",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -293,7 +293,7 @@
           "timeout": 60000
         }
       },
-      "id": "0000001b-0000-4000-8000-01a1dee4dd3f",
+      "id": "0000001b-0000-4000-8000-01a1dfae619f",
       "name": "브리핑 저장",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -314,7 +314,7 @@
           "timeout": 30000
         }
       },
-      "id": "0000001c-0000-4000-8000-01a1dee4dd3f",
+      "id": "0000001c-0000-4000-8000-01a1dfae619f",
       "name": "GitHub 기존 파일 확인",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -339,7 +339,7 @@
           "timeout": 60000
         }
       },
-      "id": "0000001d-0000-4000-8000-01a1dee4dd40",
+      "id": "0000001d-0000-4000-8000-01a1dfae619f",
       "name": "GitHub 커밋",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -353,7 +353,7 @@
       "parameters": {
         "jsCode": "// 웹훅이 비어 있으면 Discord 알림을 건너뜁니다.\nif (!$('설정').first().json.discordWebhookUrl) return [];\nreturn [{ json: $('다이제스트 생성').first().json.discord }];\n"
       },
-      "id": "0000001e-0000-4000-8000-01a1dee4dd40",
+      "id": "0000001e-0000-4000-8000-01a1dfae619f",
       "name": "Discord 사용?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -373,7 +373,7 @@
           "timeout": 30000
         }
       },
-      "id": "0000001f-0000-4000-8000-01a1dee4dd40",
+      "id": "0000001f-0000-4000-8000-01a1dfae619f",
       "name": "Discord 알림",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -386,7 +386,7 @@
       "parameters": {
         "jsCode": "// 지식베이스 조각을 50개씩 묶어 Gemini 임베딩 요청을 만듭니다.\nconst c = $('설정').first().json;\nconst chunks = $('다이제스트 생성').first().json.kbChunks || [];\nconst out = [];\nfor (let i = 0; i < chunks.length; i += 50) {\n  const part = chunks.slice(i, i + 50);\n  out.push({\n    json: {\n      chunks: part,\n      body: {\n        requests: part.map((k) => ({\n          model: `models/${c.embeddingModel}`,\n          content: { parts: [{ text: k.content }] },\n          taskType: 'RETRIEVAL_DOCUMENT',\n          outputDimensionality: c.embedDim,\n        })),\n      },\n    },\n  });\n}\nreturn out;\n"
       },
-      "id": "00000020-0000-4000-8000-01a1dee4dd40",
+      "id": "00000020-0000-4000-8000-01a1dfae619f",
       "name": "지식베이스 준비",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -414,7 +414,7 @@
           "timeout": 120000
         }
       },
-      "id": "00000021-0000-4000-8000-01a1dee4dd40",
+      "id": "00000021-0000-4000-8000-01a1dfae619f",
       "name": "임베딩",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -430,7 +430,7 @@
       "parameters": {
         "jsCode": "// 임베딩 결과를 조각과 짝지어 저장할 행을 만듭니다. 768차원으로 줄인 벡터는 길이를 1로 맞춥니다.\nconst c = $('설정').first().json;\nconst reqs = $('지식베이스 준비').all();\nfunction paired(item) {\n  const p = item.pairedItem;\n  if (Array.isArray(p)) return p[0] ? p[0].item : 0;\n  return p && typeof p.item === 'number' ? p.item : 0;\n}\nconst rows = [];\nfor (const it of $input.all()) {\n  const req = reqs[paired(it)];\n  const embs = (it.json && it.json.embeddings) || [];\n  if (!req || embs.length !== req.json.chunks.length) throw new Error('임베딩 결과 개수가 요청과 다릅니다');\n  req.json.chunks.forEach((k, i) => {\n    const v = embs[i].values || [];\n    if (v.length !== c.embedDim) throw new Error(`임베딩 크기 ${v.length} ≠ embedDim ${c.embedDim}`);\n    const norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0)) || 1;\n    rows.push({ ...k, embedding: v.map((x) => Math.round((x / norm) * 1e6) / 1e6) });\n  });\n}\nif (!rows.length) return [];\nreturn [{ json: { rows } }];\n"
       },
-      "id": "00000022-0000-4000-8000-01a1dee4dd40",
+      "id": "00000022-0000-4000-8000-01a1dfae619f",
       "name": "지식베이스 저장 준비",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -443,7 +443,7 @@
       "parameters": {
         "jsCode": "// 볼트 저장소가 비어 있으면 옵시디안 노트 생성을 건너뜁니다.\nif (!$('설정').first().json.vaultRepo) return [];\nreturn [{ json: {} }];\n"
       },
-      "id": "00000023-0000-4000-8000-01a1dee4dd40",
+      "id": "00000023-0000-4000-8000-01a1dfae61a0",
       "name": "옵시디안 사용?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -462,7 +462,7 @@
           "timeout": 60000
         }
       },
-      "id": "00000024-0000-4000-8000-01a1dee4dd40",
+      "id": "00000024-0000-4000-8000-01a1dfae61a0",
       "name": "볼트 파일 목록",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -481,7 +481,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000025-0000-4000-8000-01a1dee4dd40",
+      "id": "00000025-0000-4000-8000-01a1dfae61a0",
       "name": "볼트 기준 커밋",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -495,7 +495,7 @@
       "parameters": {
         "jsCode": "// 옵시디안 노트를 만들어 GitHub 트리 요청으로 묶습니다 (회차당 커밋 1번).\n// n8n은 \"자동/\" 폴더만 덮어쓰고, \"종목/\" 노트는 없을 때 한 번만 만듭니다.\nconst c = $('설정').first().json;\nconst { today, edition, editions, items, watchlist = [] } = $('다이제스트 생성').first().json.noteData;\nconst listing = $('볼트 파일 목록').first().json || {};\nconst parent = (($('볼트 기준 커밋').first().json || {}).object || {}).sha;\nif (!listing.sha || !parent) throw new Error('볼트 저장소를 읽지 못했습니다. 저장소가 비어 있지 않은지(README로 초기화) 확인하세요.');\n\nconst paths = new Set((listing.tree || []).filter((t) => t.type === 'blob').map((t) => t.path));\n\n// ---------- 도우미 ----------\nconst q = (v) => JSON.stringify(v); // YAML에서 그대로 읽히는 문자열\nconst safe = (s) => String(s).replace(/[\\\\/:*?\"<>|#^[\\]]/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 60);\nfunction hash(s) { // FNV-1a → 6자리, 같은 사건 노트를 다시 찾기 위한 꼬리표\n  let h = 0x811c9dc5;\n  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }\n  return h.toString(16).padStart(8, '0').slice(0, 6);\n}\nconst kst = (iso) => new Date(Date.parse(iso) + 9 * 3600_000).toISOString().replace('T', ' ').slice(0, 16);\nconst mkt = (m) => (m === 'KR' ? '국내' : m === 'US' ? '미국' : '해외');\nconst dot = (t) => (t === '호재' ? '🔴' : t === '악재' ? '🔵' : '⚪');\nconst month = today.slice(0, 7);\n// 종목 노트 이름: 국내는 종목명, 미국은 티커. 종목 사전에서 확인된(코드가 있는) 종목만 노트를 만듦\nconst noteName = (t) => (t.market === 'US' ? safe(t.code) : safe(t.name));\nconst coded = (list) => (list || []).filter((t) => t && t.code);\nconst watchSet = new Set(watchlist.map((w) => `${w.market}:${w.code}`));\nconst dailyName = `${today} 시장`;\n\n// ---------- 기사 노트 (사건마다 대표 기사 1개) ----------\nconst files = [];\nconst noteOf = {};\nfor (const it of items) {\n  const tag = hash(`${today}:${it.tier === 'T1' ? 'T1:' : ''}${it.storyKey || it.id}`); // 공시와 기사는 같은 사건이어도 노트를 따로\n  const existing = [...paths].find((p) => p.startsWith(`자동/기사/${month}/`) && p.endsWith(` ~${tag}.md`));\n  const path = existing || `자동/기사/${month}/${safe(it.titleKo) || '기사'} ~${tag}.md`;\n  const name = path.split('/').pop().replace(/\\.md$/, '');\n  noteOf[it.id] = name;\n  const tickers = coded(it.tickers).map((t) => `[[${noteName(t)}]]`);\n  const plain = (it.tickers || []).filter((t) => !t.code).map((t) => t.name);\n  const body = [\n    '---',\n    `날짜: ${today}`,\n    `발행: ${q(kst(it.publishedAt))}`,\n    `출처: ${q(it.source)}`,\n    `등급: ${q(it.sourceGrade)}`,\n    ...(it.eventType ? [`공시유형: ${q(it.eventType)}`] : []),\n    `시장: ${q(mkt(it.market))}`,\n    `논조: ${q(it.sentiment)}`,\n    `중요도: ${it.importance}`,\n    `신뢰도: ${it.credibility}`,\n    `보도매체: ${it.coverage}`,\n    `종목: ${q(tickers)}`,\n    `원문: ${q(it.url)}`,\n    'AI해석: false',\n    `tags: ${q((it.tags || []).map((t) => t.replace(/[\\s·]/g, '_')))}`,\n    '---',\n    '',\n    `# ${it.titleKo}`,\n    it.titleKo !== it.title ? `\\n> ${it.title}` : '',\n    '',\n    it.summary || '(요약 없음)',\n    '',\n    ...(it.keyPoints && it.keyPoints.length ? ['## 핵심 내용', ...it.keyPoints.map((p) => `- ${p}`), ''] : []),\n    `[원문 보기](${it.url})`,\n    '',\n    `관련: [[${dailyName}]]${tickers.length ? ' ' + tickers.join(' ') : ''}${plain.length ? ` (그 밖에 언급: ${plain.join(', ')})` : ''}`,\n    '',\n  ].join('\\n');\n  files.push({ path, content: body });\n}\n\n// ---------- 일일 노트 ----------\nconst row = (it) => `- ${dot(it.sentiment)} [[${noteOf[it.id]}|${it.titleKo.replace(/[|\\]]/g, ' ')}]] ${it.source}, 중요도 ${it.importance}${it.coverage > 1 ? `, ${it.coverage}개 매체` : ''}`;\nconst filings = items.filter((it) => it.tier === 'T1');\nconst kr = items.filter((it) => it.tier !== 'T1' && it.market === 'KR');\nconst us = items.filter((it) => it.tier !== 'T1' && it.market !== 'KR');\nconst tickerOf = {};\nfor (const it of items) for (const t of coded(it.tickers)) tickerOf[noteName(t)] = t;\nconst allTickers = Object.keys(tickerOf);\nconst daily = [\n  '---',\n  `날짜: ${today}`,\n  `마지막회차: ${q(edition)}`,\n  `기사수: ${items.length}`,\n  'tags: [\"시장브리핑\"]',\n  '---',\n  '',\n  `# ${today} 시장`,\n  '',\n  '## 브리핑 (AI 요약)',\n  ...[...editions].reverse().flatMap((e) => ['', `### ${e.edition}`, ...(e.briefing || []).map((l) => `- ${String(l).replace(/^[-*]\\s+/, '')}`)]),\n  '',\n  `## 공시·공식 발표 (${filings.length})`,\n  ...(filings.length ? filings.map(row) : ['- 없음']),\n  '',\n  `## 국내 (${kr.length})`,\n  ...(kr.length ? kr.map(row) : ['- 없음']),\n  '',\n  `## 미국·해외 (${us.length})`,\n  ...(us.length ? us.map(row) : ['- 없음']),\n  '',\n  ...(allTickers.length ? ['## 오늘 언급된 종목', allTickers.map((t) => `${watchSet.has(`${tickerOf[t].market}:${tickerOf[t].code}`) ? '⭐' : ''}[[${t}]]`).join(' '), ''] : []),\n].join('\\n');\nfiles.push({ path: `자동/일일/${dailyName}.md`, content: daily });\n\n// ---------- 종목 노트 (없을 때만) ----------\nfor (const name of allTickers) {\n  const t = tickerOf[name];\n  const exists = [...paths].some((p) => p.endsWith(`/${name}.md`) || p === `${name}.md`);\n  if (exists) continue;\n  files.push({\n    path: `종목/${name}.md`,\n    content: [\n      '---',\n      `시장: ${q(t.market === 'US' ? '미국' : '국내')}`,\n      `종목코드: ${q(t.code)}`,\n      `이름: ${q(t.name)}`,\n      'tags: [\"종목\"]',\n      '---',\n      '',\n      `# ${t.name} (${t.code})`,\n      '',\n      '## 최근 기사',\n      '```dataview',\n      'TABLE 발행, 논조, 중요도, 출처',\n      'FROM \"자동/기사\"',\n      'WHERE contains(종목, this.file.link)',\n      'SORT 발행 DESC',\n      'LIMIT 30',\n      '```',\n      '(Dataview 플러그인이 없으면 오른쪽의 백링크에서 관련 기사를 볼 수 있습니다.)',\n      '',\n      '## 내 메모',\n      '',\n    ].join('\\n'),\n  });\n}\n\nreturn [{\n  json: {\n    parent,\n    message: `notes: ${today} ${edition} (기사 ${items.length}건)`,\n    tree: { base_tree: listing.sha, tree: files.map((f) => ({ path: f.path, mode: '100644', type: 'blob', content: f.content })) },\n    count: files.length,\n  },\n}];\n"
       },
-      "id": "00000026-0000-4000-8000-01a1dee4dd40",
+      "id": "00000026-0000-4000-8000-01a1dfae61a0",
       "name": "옵시디안 노트 만들기",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -517,7 +517,7 @@
           "timeout": 120000
         }
       },
-      "id": "00000027-0000-4000-8000-01a1dee4dd40",
+      "id": "00000027-0000-4000-8000-01a1dfae61a0",
       "name": "볼트 트리 만들기",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -539,7 +539,7 @@
           "timeout": 60000
         }
       },
-      "id": "00000028-0000-4000-8000-01a1dee4dd40",
+      "id": "00000028-0000-4000-8000-01a1dfae61a0",
       "name": "볼트 커밋 만들기",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -561,7 +561,7 @@
           "timeout": 60000
         }
       },
-      "id": "00000029-0000-4000-8000-01a1dee4dd40",
+      "id": "00000029-0000-4000-8000-01a1dfae61a0",
       "name": "볼트 반영",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -592,7 +592,7 @@
           "timeout": 120000
         }
       },
-      "id": "0000002a-0000-4000-8000-01a1dee4dd40",
+      "id": "0000002a-0000-4000-8000-01a1dfae61a0",
       "name": "지식베이스 저장",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,

@@ -16,6 +16,7 @@ if (!app || !token || !guild) {
 
 const SUB = 1;
 const STRING = 3;
+const INTEGER = 4;
 
 const commands = [
   {
@@ -61,6 +62,16 @@ const commands = [
     description_localizations: { ko: '주제·종목을 조사해 리포트를 만듭니다 (1~3분)' },
     options: [
       { type: STRING, name: 'topic', name_localizations: { ko: '주제' }, description: 'Topic or stock', description_localizations: { ko: '예: 삼성전자 HBM, 엔비디아 실적, 미국 금리 인하 영향' }, required: true, max_length: 100 },
+    ],
+  },
+  {
+    name: 'ask',
+    name_localizations: { ko: '질문' },
+    description: 'Ask the knowledge base',
+    description_localizations: { ko: '쌓인 뉴스·공시·브리핑·리서치에서 찾아 답합니다' },
+    options: [
+      { type: STRING, name: 'question', name_localizations: { ko: '질문' }, description: 'Your question', description_localizations: { ko: '예: 최근 3개월 삼성전자 공시 흐름은?' }, required: true, max_length: 200 },
+      { type: INTEGER, name: 'days', name_localizations: { ko: '기간' }, description: 'Days to look back', description_localizations: { ko: '찾아볼 기간(일). 비우면 질문에서 판단, 없으면 90일' }, required: false, min_value: 1, max_value: 365 },
     ],
   },
 ];
