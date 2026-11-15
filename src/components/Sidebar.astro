@@ -2,19 +2,21 @@
 import { loadNews } from '../lib/news';
 import { fmtDateTime } from '../lib/format';
 
-interface Props { current: 'brief' | 'news' | 'filings' | 'watchlist' }
+import { getCollection } from 'astro:content';
+interface Props { current: 'brief' | 'news' | 'filings' | 'watchlist' | 'research' }
 const { current } = Astro.props;
 const { generatedAt, news, filings, watchlist } = await loadNews();
 const discord = import.meta.env.PUBLIC_DISCORD_INVITE;
+const reports = (await getCollection('research')).length;
 
 const live = [
   { id: 'brief', href: '/', label: '시장 브리핑', desc: '하루 4번 정리하는 시장 요약' },
   { id: 'news', href: '/news', label: '시장 뉴스', desc: `최근 7일 기사 ${news.length}건` },
   { id: 'filings', href: '/filings', label: '공시·공식 발표', desc: `최근 7일 ${filings.length}건` },
   { id: 'watchlist', href: '/watchlist', label: '관심 종목', desc: watchlist.length ? `${watchlist.length}개 종목` : '아직 등록된 종목 없음' },
+  { id: 'research', href: '/research', label: '리서치', desc: reports ? `리포트 ${reports}개` : 'Discord /research로 요청' },
 ];
 const soon = [
-  { label: '리서치', when: '3단계' },
   { label: '데이터·일정', when: '4단계' },
 ];
 ---
@@ -49,3 +51,10 @@ const soon = [
     {discord && <a class="discord" href={discord} target="_blank" rel="noopener">Discord에서 알림 받기</a>}
   </div>
 </header>
+
+<script>
+  // 모바일 위쪽 탭: 지금 보는 메뉴가 화면 밖이면 보이도록 옆으로 스크롤
+  const cur = document.querySelector<HTMLElement>('.nav [aria-current="page"]');
+  const nav = cur?.parentElement;
+  if (cur && nav && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = cur.offsetLeft - 16;
+</script>

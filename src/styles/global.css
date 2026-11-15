@@ -183,7 +183,8 @@ a.nav-item:hover { background: var(--paper); }
 /* 모바일: 메뉴가 위쪽 고정 탭으로 */
 @media (max-width: 56rem) {
   :root { --rail-h: 6.5rem; }
-  .shell { grid-template-columns: 1fr; }
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail, .nav, .main { min-width: 0; }
   .rail {
     position: sticky; top: 0; z-index: 10; height: var(--rail-h);
     flex-direction: column; gap: .625rem; padding: .75rem 1rem 0;
@@ -209,3 +210,44 @@ a.nav-item:hover { background: var(--paper); }
 .watch-block { margin-bottom: 2.5rem; }
 .watch-block .sec-h { margin-bottom: .75rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .625rem; }
 .watch-code { font-size: .8125rem; font-weight: 400; color: var(--muted); }
+
+/* 3-B: 리서치 */
+.report-list { border-top: 1px solid var(--rule); }
+.report-row { padding: 1rem 0 1.125rem .875rem; border-bottom: 1px solid var(--rule); box-shadow: inset 3px 0 0 var(--flat); }
+.report-row[data-tone*='호재'] { box-shadow: inset 3px 0 0 var(--rise); }
+.report-row[data-tone*='악재'] { box-shadow: inset 3px 0 0 var(--fall); }
+.tone-word { font-weight: 700; color: var(--ink); }
+.ticker-plain { font-weight: 600; color: var(--ink); }
+.crumb { margin: 0 0 .5rem; font-size: .875rem; }
+.crumb a { color: var(--muted); }
+.report-head h1 { margin-bottom: .375rem; }
+.report-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .625rem; margin: .75rem 0 0; font-size: .875rem; color: var(--muted); }
+.tone-badge { font-weight: 700; padding: .125rem .5rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--rule-strong); color: var(--ink); }
+.tone-badge[data-tone='up'] { color: var(--rise); background: var(--rise-tint); border-color: transparent; }
+.tone-badge[data-tone='down'] { color: var(--fall); background: var(--fall-tint); border-color: transparent; }
+.ticker-link { font-weight: 600; color: var(--ink); text-decoration: none; padding: .125rem .5rem; border: 1px solid var(--rule); border-radius: 999px; background: var(--surface); }
+.ticker-link small { color: var(--muted); font-weight: 400; }
+.ai-tag { font-size: .75rem; font-weight: 600; color: var(--muted); padding: .0625rem .375rem; border: 1px dashed var(--rule-strong); border-radius: 4px; margin-left: .375rem; vertical-align: middle; }
+.report-body { display: grid; gap: 2.25rem; }
+.report-body .sec-h { margin-bottom: .75rem; }
+.facts, .checks { margin: 0; padding-left: 1.25rem; display: grid; gap: .625rem; max-width: 42em; }
+.facts .tone { font-size: .75rem; font-weight: 700; padding: .0625rem .375rem; border-radius: 999px; }
+.prose { margin: 0; max-width: 42em; color: var(--ink); }
+.refs { display: inline-flex; flex-wrap: wrap; gap: .25rem; vertical-align: baseline; }
+.ref { font-size: .6875rem; font-weight: 700; line-height: 1; padding: .1875rem .3125rem; border-radius: 4px; text-decoration: none; background: var(--paper); border: 1px solid var(--rule-strong); color: var(--ink); font-variant-numeric: tabular-nums; }
+a.ref:hover { border-color: var(--ink); }
+.ref[data-kind='F'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.ref[data-kind='K'] { border-style: dashed; color: var(--muted); }
+.qa-box { padding: 1.25rem 1.25rem 1.5rem; border: 1px dashed var(--rule-strong); border-radius: 10px; background: var(--surface); }
+.qa-note { margin: 0 0 1rem; font-size: .8125rem; color: var(--muted); max-width: 46em; }
+.qa { margin: 0; display: grid; gap: 1.125rem; }
+.qa dt { font-weight: 700; margin-bottom: .25rem; }
+.qa dd { margin: 0; max-width: 44em; }
+.qa-diff { margin: .375rem 0 0; font-size: .875rem; color: var(--muted); padding-left: .625rem; border-left: 2px solid var(--rule-strong); }
+.checks li::marker { content: '☐  '; }
+.sources { margin: 0; padding: 0; list-style: none; display: grid; gap: .5rem; font-size: .875rem; }
+.sources li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .5rem; }
+.src-date { color: var(--muted); font-size: .8125rem; }
+.src-name { font-weight: 600; }
+.sources a { color: var(--ink); }
+code { font-size: .875em; padding: .0625rem .3125rem; border-radius: 4px; background: var(--paper); border: 1px solid var(--rule); }

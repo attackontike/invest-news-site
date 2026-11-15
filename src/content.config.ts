@@ -52,4 +52,33 @@ const digest = defineCollection({
   }),
 });
 
-export const collections = { digest };
+// n8n "리서치" 워크플로가 /research 명령마다 src/content/research/<slug>.md 를 만듭니다.
+const refItem = z.object({ text: z.string(), refs: z.array(z.string()).default([]) });
+const research = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/research' }),
+  schema: z.object({
+    title: z.string(),
+    topic: z.string(),
+    slug: z.string(),
+    createdAt: z.string(),
+    tone: z.string().default('중립'),
+    focus: z.string().default(''),
+    tickers: z.array(ticker).default([]),
+    report: z.object({
+      summary: z.array(z.string()).default([]),
+      filings: z.array(refItem).default([]),
+      news: z.array(refItem.extend({ sentiment: z.string().default('중립') })).default([]),
+      context: z.array(refItem).default([]),
+      issues: z.array(z.string()).default([]),
+      checks: z.array(z.string()).default([]),
+      background: z.string().default(''),
+    }),
+    qa: z.array(z.object({ q: z.string(), a: z.string(), refs: z.array(z.string()).default([]), diff: z.string().default('') })).default([]),
+    qaModel: z.string().default(''),
+    sources: z
+      .array(z.object({ id: z.string(), kind: z.string(), title: z.string(), source: z.string(), url: z.string().default(''), date: z.string().default(''), isAI: z.boolean().default(false) }))
+      .default([]),
+  }),
+});
+
+export const collections = { digest, research };

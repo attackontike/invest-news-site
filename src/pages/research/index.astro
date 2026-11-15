@@ -1,0 +1,36 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHead from '../../components/PageHead.astro';
+import { fmtDateTime, briefingHtml } from '../../lib/format';
+
+const reports = (await getCollection('research')).sort((a, b) => b.data.createdAt.localeCompare(a.data.createdAt));
+---
+<BaseLayout title="리서치" description="요청한 주제별 리서치 리포트" section="research">
+  <PageHead
+    title="리서치"
+    lead="Discord에서 /research 명령으로 요청한 리포트입니다. 공시·뉴스·지식베이스의 과거 기록을 근거로 Gemini가 정리하고, 다른 AI 모델이 투자 관점 질문에 답합니다."
+    rule={`리포트 ${reports.length}개`}
+  />
+
+  {reports.length === 0 ? (
+    <div class="empty">
+      <p><strong>아직 리포트가 없습니다.</strong></p>
+      <p>Discord에서 <code>/research topic:삼성전자 HBM</code>처럼 요청하면 1~3분 뒤 이곳에 리포트가 생깁니다.</p>
+    </div>
+  ) : (
+    <ol class="rows report-list">
+      {reports.map((r) => (
+        <li class="report-row" data-tone={r.data.tone}>
+          <p class="meta">
+            <time datetime={r.data.createdAt}>{fmtDateTime(r.data.createdAt)}</time>
+            <span class="tone-word">{r.data.tone}</span>
+            {r.data.tickers.map((t) => <span class="ticker-plain">{t.name}</span>)}
+          </p>
+          <h3 class="title"><a href={`/research/${r.data.slug}`}>{r.data.title}</a></h3>
+          {r.data.report.summary[0] && <p class="sum" set:html={briefingHtml(r.data.report.summary[0])} />}
+        </li>
+      ))}
+    </ol>
+  )}
+</BaseLayout>

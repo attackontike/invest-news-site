@@ -1,0 +1,119 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Refs from '../../components/Refs.astro';
+import { fmtDateTime, briefingHtml } from '../../lib/format';
+import { loadNews } from '../../lib/news';
+
+export async function getStaticPaths() {
+  const reports = await getCollection('research');
+  return reports.map((r) => ({ params: { slug: r.data.slug }, props: { r: r.data } }));
+}
+const { r } = Astro.props;
+const { watchSet } = await loadNews();
+const byId = Object.fromEntries(r.sources.map((s) => [s.id, s]));
+const rep = r.report;
+const toneClass = r.tone.includes('호재') ? 'up' : r.tone.includes('악재') ? 'down' : 'flat';
+---
+<BaseLayout title={r.title} description={`리서치: ${r.topic}`} section="research">
+  <p class="crumb"><a href="/research">리서치</a></p>
+  <header class="page-head report-head">
+    <h1>{r.title}</h1>
+    <p class="lead">주제: {r.topic}{r.focus && <> · 초점: {r.focus}</>}</p>
+    <p class="report-meta">
+      <time datetime={r.createdAt}>{fmtDateTime(r.createdAt)}</time>
+      <span class="tone-badge" data-tone={toneClass}>{r.tone}</span>
+      {r.tickers.map((t) => watchSet.has(`${t.market}:${t.code}`)
+        ? <a class="ticker-link" href={`/watchlist#w-${t.market}-${t.code}`}>★ {t.name} <small>{t.code}</small></a>
+        : <span class="ticker-link">{t.name} <small>{t.code}</small></span>)}
+    </p>
+  </header>
+
+  {rep.summary.length > 0 && (
+    <section class="brief" aria-labelledby="s-sum">
+      <h2 id="s-sum" class="brief-h">요약 <span class="ai-tag">AI 정리</span></h2>
+      <ul class="brief-lines">{rep.summary.map((l) => <li set:html={briefingHtml(l)} />)}</ul>
+    </section>
+  )}
+
+  <div class="report-body">
+    {rep.filings.length > 0 && (
+      <section aria-labelledby="s-fil">
+        <h2 id="s-fil" class="sec-h">공시·공식 서류</h2>
+        <ul class="facts">{rep.filings.map((x) => <li>{x.text} <Refs refs={x.refs} byId={byId} /></li>)}</ul>
+      </section>
+    )}
+
+    {rep.news.length > 0 && (
+      <section aria-labelledby="s-news">
+        <h2 id="s-news" class="sec-h">뉴스 흐름</h2>
+        <ul class="facts">
+          {rep.news.map((x) => <li data-tone={x.sentiment}><span class="tone" data-tone={x.sentiment}>{x.sentiment}</span> {x.text} <Refs refs={x.refs} byId={byId} /></li>)}
+        </ul>
+      </section>
+    )}
+
+    {rep.background && (
+      <section aria-labelledby="s-bg">
+        <h2 id="s-bg" class="sec-h">배경 설명 <span class="ai-tag">AI · 웹 검색 요약</span></h2>
+        <p class="prose">{rep.background}</p>
+      </section>
+    )}
+
+    {rep.context.length > 0 && (
+      <section aria-labelledby="s-ctx">
+        <h2 id="s-ctx" class="sec-h">과거 맥락 <span class="ai-tag">지식베이스 비교</span></h2>
+        <ul class="facts">{rep.context.map((x) => <li>{x.text} <Refs refs={x.refs} byId={byId} /></li>)}</ul>
+      </section>
+    )}
+
+    {rep.issues.length > 0 && (
+      <section aria-labelledby="s-iss">
+        <h2 id="s-iss" class="sec-h">핵심 쟁점</h2>
+        <ul class="facts">{rep.issues.map((l) => <li>{l}</li>)}</ul>
+      </section>
+    )}
+
+    {r.qa.length > 0 && (
+      <section class="qa-box" aria-labelledby="s-qa">
+        <h2 id="s-qa" class="sec-h">다른 AI의 투자 관점 Q&amp;A {r.qaModel && <span class="ai-tag">{r.qaModel}</span>}</h2>
+        <p class="qa-note">리포트를 쓴 Gemini와 다른 AI 모델이 같은 자료를 보고 답한 해석입니다. 투자 권유가 아니며, "자료와 다른 점"은 수집 자료에 없는 일반론이나 다른 시각입니다.</p>
+        <dl class="qa">
+          {r.qa.map((x) => (
+            <div class="qa-item">
+              <dt>{x.q}</dt>
+              <dd>
+                {x.a} <Refs refs={x.refs} byId={byId} />
+                {x.diff && <p class="qa-diff">자료와 다른 점: {x.diff}</p>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    )}
+
+    {rep.checks.length > 0 && (
+      <section aria-labelledby="s-chk">
+        <h2 id="s-chk" class="sec-h">추가로 확인할 것</h2>
+        <ul class="checks">{rep.checks.map((l) => <li>{l}</li>)}</ul>
+      </section>
+    )}
+
+    {r.sources.length > 0 && (
+      <section aria-labelledby="s-src">
+        <h2 id="s-src" class="sec-h">출처</h2>
+        <ol class="sources">
+          {r.sources.map((s) => (
+            <li>
+              <span class="ref" data-kind={s.id[0]}>{s.id}</span>
+              <span class="src-date">{s.date}</span>
+              <span class="src-name">{s.source}</span>
+              {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a> : <span>{s.title}</span>}
+            </li>
+          ))}
+        </ol>
+        <p class="sec-note">F 공시·공식 서류, N 뉴스, K 지식베이스 과거 기록 (AI 해석 포함)</p>
+      </section>
+    )}
+  </div>
+</BaseLayout>

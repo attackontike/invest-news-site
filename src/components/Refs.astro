@@ -1,0 +1,18 @@
+---
+// 근거 번호를 작은 링크로. 누르면 원문, 마우스를 올리면 제목
+interface Props { refs: string[]; byId: Record<string, { title: string; source: string; url: string; date: string; isAI: boolean }> }
+const { refs, byId } = Astro.props;
+---
+{refs.length > 0 && (
+  <span class="refs">
+    {refs.map((r) => {
+      const s = byId[r];
+      const label = s ? `${s.source} · ${s.title}${s.date ? ` (${s.date})` : ''}` : r;
+      return s && s.url ? (
+        <a class="ref" data-kind={r[0]} href={s.url} target="_blank" rel="noopener noreferrer" title={label}>{r}</a>
+      ) : (
+        <span class="ref" data-kind={r[0]} title={label}>{r}</span>
+      );
+    })}
+  </span>
+)}

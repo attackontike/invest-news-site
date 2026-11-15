@@ -54,6 +54,15 @@ const commands = [
       },
     ],
   },
+  {
+    name: 'research',
+    name_localizations: { ko: '리서치' },
+    description: 'Research a topic',
+    description_localizations: { ko: '주제·종목을 조사해 리포트를 만듭니다 (1~3분)' },
+    options: [
+      { type: STRING, name: 'topic', name_localizations: { ko: '주제' }, description: 'Topic or stock', description_localizations: { ko: '예: 삼성전자 HBM, 엔비디아 실적, 미국 금리 인하 영향' }, required: true, max_length: 100 },
+    ],
+  },
 ];
 
 const res = await fetch(`https://discord.com/api/v10/applications/${app}/guilds/${guild}/commands`, {

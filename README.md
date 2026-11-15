@@ -1,4 +1,4 @@
-# 투자 뉴스 브리프 (3-A단계까지)
+# 투자 뉴스 브리프 (3-B단계까지)
 
 국내·미국 시장 뉴스를 매시간 모아 Supabase에 쌓고, 하루 4번(07:00, 12:00, 16:30, 22:00) Gemini로 요약해 Astro 사이트와 Discord에 게시합니다. 요약한 기사와 브리핑은 지식베이스(pgvector)에도 쌓입니다.
 
@@ -28,6 +28,15 @@
 - `n8n/discord-command.json`: 명령 처리 워크플로 (자격 증명 Relay Secret 추가)
 - `supabase/schema-3.sql`: `watch_context` 함수
 - 설치 순서는 "설치 가이드 (3-A)"를 따르세요
+
+## 3-B에서 추가된 것
+
+- **`/research topic:주제`**: 주제 해석 → 공시(DART·SEC)·뉴스(네이버·Google News)·지식베이스 과거 맥락·웹 배경 수집 → 근거 번호가 붙은 Gemini 리포트 → 다른 AI의 투자 관점 Q&A 7개 (GitHub Models 기본, Groq 예비, 둘 다 무료) → 사이트·Discord·옵시디안·지식베이스
+- `n8n/research.json` (35노드), `discord-command.json` 갱신 (리서치 실행 연결)
+- 사이트 "리서치" 메뉴 (`/research`, `/research/<slug>`)
+- `supabase/schema-3b.sql`: `research_context` 함수
+- 자격 증명 GitHub Models, Groq (둘 다 Header Auth, `Authorization: Bearer 토큰`) 추가
+- 설치 순서는 "설치 가이드 (3-B)"를 따르세요
 
 ## 폴더
 
