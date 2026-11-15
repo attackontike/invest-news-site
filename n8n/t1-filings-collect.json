@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "00000036-0000-4000-8000-01a1d96de097",
+      "id": "00000036-0000-4000-8000-01a1ddcd154c",
       "name": "30분마다",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -25,7 +25,7 @@
       "parameters": {
         "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nconst now = new Date();\nconst kst = (d) => new Date(d.getTime() + 9 * 3600_000).toISOString().slice(0, 10).replace(/-/g, '');\nreturn [{\n  json: {\n    supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n    secUserAgent: 'invest-news-site your-email@example.com', // SEC 요구: 이메일 포함\n    discordAlertWebhook: '', // #공시알림 채널 웹훅. 비우면 즉시 알림을 건너뜀\n\n    // ---- DART ----\n    dartMarkets: ['Y', 'K'], // 관심 종목이 아닌 회사는 유가증권(Y)·코스닥(K)의 중요 공시만 수집\n    dartMaxPages: 10, // 한 번 실행에 최대 1,000건까지 넘겨 봄\n    alertAllImportant: false, // true면 관심 종목이 아니어도 영향도 70 이상 공시를 즉시 알림\n    // [보고서명에 들어 있는 말(띄어쓰기·괄호·가운뎃점 없이), 공시 유형, 영향도] — 위에서부터 먼저 맞는 것 적용\n    dartRules: [\n      ['회생절차', '회생절차', 90], ['부도발생', '부도', 90], ['상장폐지', '상장폐지', 90],\n      ['횡령', '횡령·배임', 80], ['배임', '횡령·배임', 80], ['관리종목지정', '관리종목 지정', 80], ['거래정지', '매매거래정지', 80],\n      ['합병결정', '합병', 75], ['주식분할결정', '액면분할', 55], ['분할결정', '회사분할', 75],\n      ['유상증자결정', '유상증자', 70], ['최대주주변경', '최대주주 변경', 70], ['영업잠정실적', '잠정실적', 70], ['공개매수', '공개매수', 70],\n      ['단일판매공급계약', '공급계약', 65], ['주식소각결정', '자사주 소각', 65],\n      ['무상증자결정', '무상증자', 60], ['전환사채권발행결정', '전환사채', 60], ['신주인수권부사채권발행결정', '신주인수권부사채', 60],\n      ['매출액또는손익구조', '손익구조 변경', 60], ['자기주식취득결정', '자사주 취득', 60], ['불성실공시법인지정', '불성실공시', 60],\n      ['영업양수', '영업양수도', 60], ['영업양도', '영업양수도', 60],\n      ['교환사채권발행결정', '교환사채', 50], ['자기주식처분결정', '자사주 처분', 50], ['현금현물배당결정', '배당', 50],\n      ['타법인주식및출자증권취득결정', '타법인 지분 취득', 55], ['소송등의제기', '소송', 55], ['투자판단관련주요경영사항', '주요 경영사항', 55],\n      ['감사보고서제출', '감사보고서', 40],\n    ],\n\n    // ---- SEC (관심 종목 중 미국 종목) ----\n    secForms: ['8-K', '10-Q', '10-K', '6-K', '20-F', 'DEF 14A', 'S-1'],\n    secAlertForms: ['8-K', '10-Q', '10-K', '6-K'],\n    secDays: 3, // 최근 며칠 치 제출 서류를 볼지\n\n    // ---- 연준 보도자료 ----\n    fedFeed: 'https://www.federalreserve.gov/feeds/press_all.xml',\n    fedInclude: 'FOMC|monetary policy|discount rate|federal funds|Beige Book|Federal Open Market|economic projections',\n\n    alertHours: 6, // SEC·연준은 이 시간 안에 나온 것만 즉시 알림 (처음 실행할 때 옛 서류가 한꺼번에 오지 않게)\n    bgnDe: kst(new Date(now.getTime() - 86400_000)), // 어제부터 (밤사이 공시 포함)\n    endDe: kst(now),\n    nowIso: now.toISOString(),\n  },\n}];\n"
       },
-      "id": "00000037-0000-4000-8000-01a1d96de097",
+      "id": "00000037-0000-4000-8000-01a1ddcd154c",
       "name": "설정",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -47,7 +47,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000038-0000-4000-8000-01a1d96de097",
+      "id": "00000038-0000-4000-8000-01a1ddcd154c",
       "name": "수집 맥락 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -86,7 +86,7 @@
           }
         }
       },
-      "id": "00000039-0000-4000-8000-01a1d96de097",
+      "id": "00000039-0000-4000-8000-01a1ddcd154c",
       "name": "DART 공시목록",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -103,7 +103,7 @@
       "parameters": {
         "jsCode": "// 관심 종목 중 미국 종목의 SEC 제출 목록 + 연준 보도자료 요청을 만듭니다.\nconst c = $('설정').first().json;\nconst ctx = $('수집 맥락 조회').first().json || {};\nconst out = [{ json: { kind: 'fed', url: c.fedFeed } }];\nfor (const w of ctx.watchlist || []) {\n  if (w.market !== 'US' || !w.cik) continue;\n  out.push({ json: { kind: 'sec', url: `https://data.sec.gov/submissions/CIK${String(w.cik).padStart(10, '0')}.json`, watch: w } });\n}\nreturn out;\n"
       },
-      "id": "0000003a-0000-4000-8000-01a1d96de097",
+      "id": "0000003a-0000-4000-8000-01a1ddcd154c",
       "name": "SEC 요청 만들기",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -142,7 +142,7 @@
           }
         }
       },
-      "id": "0000003b-0000-4000-8000-01a1d96de097",
+      "id": "0000003b-0000-4000-8000-01a1ddcd154c",
       "name": "SEC·연준 읽기",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -156,7 +156,7 @@
       "parameters": {
         "jsCode": "// DART 공시목록, SEC 제출 서류, 연준 보도자료를 공시 후보로 정리합니다.\nconst c = $('설정').first().json;\nconst ctx = $('수집 맥락 조회').first().json || {};\nconst now = Date.parse(c.nowIso);\nconst cursor = (ctx.cursors || {}).dart_last_rcept_no || '';\nconst watch = ctx.watchlist || [];\nconst watchKR = new Map(watch.filter((w) => w.market === 'KR').map((w) => [w.code, w]));\nconst cands = [];\nconst report = [];\n\nconst kst = (ymd8, hhmm) => `${ymd8.slice(0, 4)}-${ymd8.slice(4, 6)}-${ymd8.slice(6, 8)}T${hhmm}:00+09:00`;\nconst todayKst = c.endDe;\nconst norm = (s) => String(s || '').replace(/\\[[^\\]]*\\]/g, '').replace(/[\\s()（）ㆍ·∙,]/g, '');\nfunction rule(reportNm) {\n  const n = norm(reportNm);\n  for (const [kw, ev, imp] of c.dartRules) if (n.includes(kw)) return { ev, imp };\n  return null;\n}\nfunction paired(item) {\n  const p = item.pairedItem;\n  if (Array.isArray(p)) return p[0] ? p[0].item : 0;\n  return p && typeof p.item === 'number' ? p.item : 0;\n}\n\n// ---------- DART ----------\nlet maxRcept = cursor;\nlet dartPages = 0;\nfor (const it of $('DART 공시목록').all()) {\n  const b = it.json || {};\n  if (b.status && b.status !== '000' && b.status !== '013') {\n    throw new Error(`DART 오류 ${b.status}: ${b.message || ''} (020은 하루 요청 한도, 010·011은 인증키 문제)`);\n  }\n  dartPages++;\n  for (const d of b.list || []) {\n    if (d.rcept_no > maxRcept) maxRcept = d.rcept_no;\n    const w = watchKR.get(d.stock_code);\n    const r = rule(d.report_nm);\n    const listed = c.dartMarkets.includes(d.corp_cls);\n    if (!w && !(r && listed)) continue;\n    const correction = /\\[기재정정\\]|\\[정정/.test(d.report_nm);\n    const impact = Math.max(20, (r ? r.imp : 40) - (correction ? 10 : 0));\n    const name = (w && w.label) || d.corp_name;\n    const isToday = d.rcept_dt === todayKst;\n    cands.push({\n      url_key: `dart:${d.rcept_no}`,\n      url: `https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${d.rcept_no}`,\n      title: `[${d.corp_name}] ${d.report_nm.trim()}`,\n      source: 'DART', source_trust: 5, source_grade: '공시', tier: 'T1', market: 'KR', feed_kind: 'dart',\n      published_at: isToday ? c.nowIso : new Date(kst(d.rcept_dt, '18:00')).toISOString(),\n      snippet: `${d.corp_name} ${d.corp_cls === 'Y' ? '유가증권' : d.corp_cls === 'K' ? '코스닥' : '기타'} 공시. 제출인 ${d.flr_nm || d.corp_name}.${d.rm ? ` 비고 ${d.rm}.` : ''}`,\n      tickers: d.stock_code ? [{ market: 'KR', code: d.stock_code, name }] : [],\n      event_type: r ? r.ev : '기타 공시',\n      impact,\n      _alert: !!(cursor && !correction && ((w && r) || (c.alertAllImportant && r && r.imp >= 70))),\n      _watch: !!w,\n    });\n  }\n}\nreport.push(`DART ${dartPages}페이지`);\n\n// ---------- SEC · 연준 ----------\nconst ITEMS = { '1.01': '중요 계약 체결', '1.02': '중요 계약 종료', '1.03': '파산·회생', '2.01': '자산 인수·처분', '2.02': '실적 발표', '2.03': '채무 발생', '2.05': '구조조정 비용', '2.06': '자산 손상', '3.01': '상장 유지 기준 미달', '3.02': '비등록 증권 발행', '4.01': '감사인 변경', '4.02': '재무제표 신뢰성 문제', '5.01': '지배권 변경', '5.02': '임원·이사 변동', '5.03': '정관 변경', '5.07': '주주총회 결과', '7.01': '공정공시', '8.01': '기타 중요 사항' };\nconst FORMS = { '10-Q': '분기보고서', '10-K': '연차보고서', '6-K': '해외기업 수시보고', '20-F': '해외기업 연차보고서', 'DEF 14A': '주총 위임장 설명서', 'S-1': '증권신고서' };\nconst reqs = $('SEC 요청 만들기').all().map((i) => i.json);\nconst NAMED = { amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\", nbsp: ' ' };\nconst decode = (s) => String(s || '').replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, '$1').replace(/&#(\\d+);/g, (_, d) => String.fromCodePoint(+d)).replace(/&([a-z]+);/gi, (m, n) => NAMED[n.toLowerCase()] ?? m);\nconst strip = (s) => decode(s).replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();\nconst tag = (b, n) => { const m = b.match(new RegExp(`<${n}(?:\\\\s[^>]*)?>([\\\\s\\\\S]*?)</${n}>`, 'i')); return m ? m[1] : ''; };\n\nfor (const it of $('SEC·연준 읽기').all()) {\n  const req = reqs[paired(it)] || {};\n  const j = it.json || {};\n  const body = typeof j.body === 'string' ? j.body : typeof j.data === 'string' ? j.data : '';\n  if (j.error || !j.statusCode || j.statusCode >= 400 || !body) {\n    report.push(`${req.kind === 'fed' ? '연준' : (req.watch || {}).code}: 실패 ${j.statusCode || ''}`);\n    continue;\n  }\n  if (req.kind === 'fed') {\n    const inc = new RegExp(c.fedInclude, 'i');\n    for (const b of body.match(/<item[\\s>][\\s\\S]*?<\\/item>/gi) || []) {\n      const title = strip(tag(b, 'title'));\n      if (!inc.test(title)) continue;\n      const link = strip(tag(b, 'link'));\n      const t = Date.parse(strip(tag(b, 'pubDate')));\n      if (!link || !Number.isFinite(t) || now - t > c.secDays * 86400_000) continue;\n      const fomc = /FOMC statement/i.test(title);\n      cands.push({\n        url_key: `fed:${link.replace(/^https?:\\/\\/(www\\.)?/i, '')}`, url: link, title, source: 'Federal Reserve', source_trust: 5, source_grade: '공시',\n        tier: 'T1', market: 'US', feed_kind: 'fed', published_at: new Date(t).toISOString(), snippet: strip(tag(b, 'description')).slice(0, 500),\n        tickers: [], event_type: fomc ? 'FOMC 성명' : '연준 발표', impact: fomc ? 90 : 60,\n        _alert: fomc && now - t < c.alertHours * 3600_000, _watch: false,\n      });\n    }\n    continue;\n  }\n  // SEC submissions JSON\n  let s;\n  try { s = JSON.parse(body); } catch (e) { report.push(`${req.watch.code}: JSON 오류`); continue; }\n  const r = (s.filings || {}).recent || {};\n  const w = req.watch;\n  const n = (r.accessionNumber || []).length;\n  for (let i = 0; i < n; i++) {\n    const form = r.form[i];\n    if (!c.secForms.includes(form)) continue;\n    const accepted = Date.parse(r.acceptanceDateTime[i]) || Date.parse(r.filingDate[i]);\n    if (!Number.isFinite(accepted) || now - accepted > c.secDays * 86400_000) continue;\n    const acc = r.accessionNumber[i];\n    const items = String(r.items[i] || '').split(',').map((x) => x.trim()).filter((x) => ITEMS[x]);\n    const label = form === '8-K' ? (items.length ? items.map((x) => ITEMS[x]).join(', ') : '수시보고') : FORMS[form] || form;\n    let impact = form === '10-Q' || form === '10-K' ? 65 : form === '6-K' || form === '20-F' ? 50 : 45;\n    if (form === '8-K') impact = items.some((x) => ['1.01', '1.03', '2.01', '3.01', '4.02', '5.01'].includes(x)) ? 75 : items.includes('2.02') ? 70 : items.includes('5.02') ? 60 : 50;\n    cands.push({\n      url_key: `sec:${acc}`,\n      url: `https://www.sec.gov/Archives/edgar/data/${Number(w.cik)}/${acc.replace(/-/g, '')}/${r.primaryDocument[i]}`,\n      title: `[${w.code}] ${form}: ${label}`,\n      source: 'SEC EDGAR', source_trust: 5, source_grade: '공시', tier: 'T1', market: 'US', feed_kind: 'sec',\n      published_at: new Date(accepted).toISOString(),\n      snippet: `${s.name || w.name} (${w.code}) ${form} 제출.${r.primaryDocDescription && r.primaryDocDescription[i] ? ` ${r.primaryDocDescription[i]}.` : ''}`,\n      tickers: [{ market: 'US', code: w.code, name: w.label || w.name }],\n      event_type: form === '8-K' ? `8-K ${items.join(' ') || ''}`.trim() : form,\n      impact,\n      _alert: c.secAlertForms.includes(form) && impact >= 60 && now - accepted < c.alertHours * 3600_000,\n      _watch: true,\n    });\n  }\n}\n\nconst seen = new Set();\nconst uniq = cands.filter((a) => (seen.has(a.url_key) ? false : (seen.add(a.url_key), true)));\nreturn [{ json: { candidates: uniq, keys: uniq.map((a) => a.url_key), cursor: maxRcept, oldCursor: cursor, report } }];\n"
       },
-      "id": "0000003c-0000-4000-8000-01a1d96de097",
+      "id": "0000003c-0000-4000-8000-01a1ddcd154c",
       "name": "공시 정리",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -178,7 +178,7 @@
           "timeout": 30000
         }
       },
-      "id": "0000003d-0000-4000-8000-01a1d96de097",
+      "id": "0000003d-0000-4000-8000-01a1ddcd154c",
       "name": "이미 저장된 공시",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -191,7 +191,7 @@
       "parameters": {
         "jsCode": "// 이미 저장된 공시를 빼고 저장할 행, 즉시 알림, 새 커서를 만듭니다.\nconst p = $('공시 정리').first().json;\nconst res = $input.first().json || {};\nconst existing = new Set(Array.isArray(res.keys) ? res.keys : []);\nconst fresh = p.candidates.filter((a) => !existing.has(a.url_key));\n\nconst COLS = ['url_key', 'url', 'title', 'source', 'source_trust', 'source_grade', 'tier', 'market', 'feed_kind', 'published_at', 'snippet', 'tickers', 'event_type', 'impact'];\nconst rows = fresh.map((a) => Object.fromEntries(COLS.map((k) => [k, a[k] === undefined ? null : a[k]]))).map((r) => ({ ...r, status: 'new' }));\n\nconst kstTime = (iso) => new Date(Date.parse(iso) + 9 * 3600_000).toISOString().slice(5, 16).replace('T', ' ').replace('-', '.');\nconst alerts = fresh\n  .filter((a) => a._alert)\n  .sort((a, b) => b.impact - a.impact)\n  .map((a) => ({\n    title: `${a._watch ? '⭐ ' : ''}${a.title}`.slice(0, 250),\n    url: a.url,\n    color: a.market === 'KR' ? 0xd7263d : 0x1b5fd1,\n    description: `**${a.event_type}** · ${a.source} · ${kstTime(a.published_at)}\\n${a.snippet}`.slice(0, 1000),\n  }));\n\nreturn [{ json: { rows, alerts, cursor: p.cursor, cursorChanged: p.cursor && p.cursor !== p.oldCursor, report: p.report } }];\n"
       },
-      "id": "0000003e-0000-4000-8000-01a1d96de097",
+      "id": "0000003e-0000-4000-8000-01a1ddcd154c",
       "name": "새 공시 고르기",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -204,7 +204,7 @@
       "parameters": {
         "jsCode": "// 저장할 새 공시가 없으면 여기서 끝납니다.\nconst { rows } = $('새 공시 고르기').first().json;\nreturn rows.length ? [{ json: { rows } }] : [];\n"
       },
-      "id": "0000003f-0000-4000-8000-01a1d96de097",
+      "id": "0000003f-0000-4000-8000-01a1ddcd154c",
       "name": "저장할 공시 있음?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -235,7 +235,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000040-0000-4000-8000-01a1d96de097",
+      "id": "00000040-0000-4000-8000-01a1ddcd154c",
       "name": "공시 저장",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -248,7 +248,7 @@
       "parameters": {
         "jsCode": "// 즉시 알림: 웹훅이 비어 있거나 알릴 공시가 없으면 건너뜁니다. Discord는 메시지당 카드 10개까지.\nconst hook = $('설정').first().json.discordAlertWebhook;\nconst { alerts } = $('새 공시 고르기').first().json;\nif (!hook || !alerts.length) return [];\nconst out = [];\nfor (let i = 0; i < alerts.length; i += 10) {\n  out.push({ json: { payload: { username: '투자 뉴스 브리프 · 공시', content: i === 0 ? `🔔 새 공시 ${alerts.length}건` : '', embeds: alerts.slice(i, i + 10) } } });\n}\nreturn out;\n"
       },
-      "id": "00000041-0000-4000-8000-01a1d96de097",
+      "id": "00000041-0000-4000-8000-01a1ddcd154c",
       "name": "알릴 공시 있음?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -274,7 +274,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000042-0000-4000-8000-01a1d96de097",
+      "id": "00000042-0000-4000-8000-01a1ddcd154c",
       "name": "Discord 공시 알림",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -287,7 +287,7 @@
       "parameters": {
         "jsCode": "// DART 커서(마지막으로 본 접수번호)가 바뀌었을 때만 저장합니다.\nconst p = $('새 공시 고르기').first().json;\nif (!p.cursorChanged) return [];\nreturn [{ json: { rows: [{ key: 'dart_last_rcept_no', value: p.cursor, updated_at: new Date().toISOString() }] } }];\n"
       },
-      "id": "00000043-0000-4000-8000-01a1d96de097",
+      "id": "00000043-0000-4000-8000-01a1ddcd154c",
       "name": "커서 바뀜?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -318,7 +318,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000044-0000-4000-8000-01a1d96de097",
+      "id": "00000044-0000-4000-8000-01a1ddcd154c",
       "name": "커서 저장",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,

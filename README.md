@@ -1,4 +1,4 @@
-# 투자 뉴스 브리프 (2단계까지)
+# 투자 뉴스 브리프 (3-A단계까지)
 
 국내·미국 시장 뉴스를 매시간 모아 Supabase에 쌓고, 하루 4번(07:00, 12:00, 16:30, 22:00) Gemini로 요약해 Astro 사이트와 Discord에 게시합니다. 요약한 기사와 브리핑은 지식베이스(pgvector)에도 쌓입니다.
 
@@ -19,6 +19,15 @@
 - **사이트**: 공시·공식 발표(`/filings`), 관심 종목(`/watchlist`) 메뉴, 브리핑의 주요 공시
 - 추가 스키마는 `supabase/schema-2.sql`, 자격 증명은 DART (Query Auth, `crtfc_key`) 하나 추가
 - 2단계 설치 순서는 별도의 "설치 가이드 (2단계)"를 따르세요
+
+## 3-A에서 추가된 것
+
+- **Discord 명령**: `/watch add·remove·list`로 관심 종목 관리
+- `api/discord.js`: Vercel 중계 함수. Discord 서명 확인, 허용 사용자 확인, n8n으로 전달 (환경변수 `DISCORD_PUBLIC_KEY`, `ALLOWED_USER_IDS`, `N8N_COMMAND_WEBHOOK_URL`, `RELAY_SECRET`)
+- `scripts/register-commands.mjs`: 슬래시 명령 등록
+- `n8n/discord-command.json`: 명령 처리 워크플로 (자격 증명 Relay Secret 추가)
+- `supabase/schema-3.sql`: `watch_context` 함수
+- 설치 순서는 "설치 가이드 (3-A)"를 따르세요
 
 ## 폴더
 
