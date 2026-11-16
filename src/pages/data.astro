@@ -1,0 +1,76 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHead from '../components/PageHead.astro';
+import Spark from '../components/Spark.astro';
+import { indicators, upcoming, updatedAt, fmtValue, fmtChange, kstToday } from '../lib/market';
+import { fmtDay, fmtDateTime } from '../lib/format';
+
+const groups = [
+  { id: 'KR', title: '한국', list: indicators.filter((i) => i.market === 'KR') },
+  { id: 'US', title: '미국', list: indicators.filter((i) => i.market === 'US') },
+];
+const evs = upcoming(14);
+const byDay = [...new Set(evs.map((e) => e.date))].map((d) => ({ day: d, items: evs.filter((e) => e.date === d) }));
+const today = kstToday();
+const ref = new Date();
+---
+<BaseLayout title="데이터·일정" description="거시 지표와 경제 일정" section="data">
+  <PageHead
+    title="데이터·일정"
+    lead="한국은행 ECOS와 미국 FRED의 주요 지표, 앞으로 2주간의 경제 발표 일정입니다. 매일 아침 갱신되고, 중요한 일정은 전날 저녁 Discord로 예고합니다."
+    rule={updatedAt ? `갱신 ${fmtDateTime(updatedAt)}` : undefined}
+  />
+
+  {indicators.length === 0 && evs.length === 0 ? (
+    <div class="empty">
+      <p><strong>아직 데이터가 없습니다.</strong></p>
+      <p>n8n의 "T3 데이터·일정" 워크플로가 실행되면(매일 06:40) 이곳에 지표와 일정이 나타납니다.</p>
+    </div>
+  ) : (
+    <div class="data-grid">
+      <div class="data-cols">
+        {groups.map((g) => g.list.length > 0 && (
+          <section aria-labelledby={`g-${g.id}`}>
+            <h2 id={`g-${g.id}`} class="sec-h">{g.title}</h2>
+            <ul class="ind-list">
+              {g.list.map((i) => (
+                <li class="ind" data-dir={i.change && i.change > 0 ? 'up' : i.change && i.change < 0 ? 'down' : 'flat'}>
+                  <div class="ind-main">
+                    <p class="ind-name">{i.name}</p>
+                    <p class="ind-value">{fmtValue(i.value, i.unit)}</p>
+                    <p class="ind-meta"><span class="ind-chg">{fmtChange(i.change, i.unit)}</span><span>{i.date} · {i.source}</span></p>
+                  </div>
+                  <Spark points={i.history} label={`${i.name} 최근 추이`} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+
+      <section aria-labelledby="ev-h" class="ev-block">
+        <h2 id="ev-h" class="sec-h">앞으로 2주 경제 일정</h2>
+        <p class="sec-note">시각은 한국 시간. ★ 많을수록 시장 영향이 큰 발표</p>
+        {byDay.length === 0 ? <p class="none">예정된 일정이 없습니다.</p> : (
+          <ol class="ev-days">
+            {byDay.map((d) => (
+              <li class={d.day === today ? 'is-today' : ''}>
+                <h3 class="ev-day">{fmtDay(d.day, ref)}</h3>
+                <ul class="ev-list">
+                  {d.items.map((e) => (
+                    <li data-imp={e.importance}>
+                      <span class="ev-time">{e.time ?? '시간 미정'}</span>
+                      <span class="ev-flag">{e.market === 'US' ? '미국' : '한국'}</span>
+                      <span class="ev-name">{e.name}</span>
+                      <span class="ev-imp" aria-label={`중요도 ${e.importance}`}>{'★'.repeat(e.importance)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+    </div>
+  )}
+</BaseLayout>

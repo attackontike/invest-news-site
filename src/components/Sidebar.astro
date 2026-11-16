@@ -3,7 +3,8 @@ import { loadNews } from '../lib/news';
 import { fmtDateTime } from '../lib/format';
 
 import { getCollection } from 'astro:content';
-interface Props { current: 'brief' | 'news' | 'filings' | 'watchlist' | 'research' }
+import { upcoming } from '../lib/market';
+interface Props { current: 'brief' | 'news' | 'filings' | 'watchlist' | 'research' | 'data' }
 const { current } = Astro.props;
 const { generatedAt, news, filings, watchlist } = await loadNews();
 const discord = import.meta.env.PUBLIC_DISCORD_INVITE;
@@ -15,10 +16,9 @@ const live = [
   { id: 'filings', href: '/filings', label: '공시·공식 발표', desc: `최근 7일 ${filings.length}건` },
   { id: 'watchlist', href: '/watchlist', label: '관심 종목', desc: watchlist.length ? `${watchlist.length}개 종목` : '아직 등록된 종목 없음' },
   { id: 'research', href: '/research', label: '리서치', desc: reports ? `리포트 ${reports}개` : 'Discord /research로 요청' },
+  { id: 'data', href: '/data', label: '데이터·일정', desc: `2주 일정 ${upcoming(14).length}건` },
 ];
-const soon = [
-  { label: '데이터·일정', when: '4단계' },
-];
+const soon: { label: string; when: string }[] = [];
 ---
 <header class="rail">
   <a class="brand" href="/">
@@ -36,14 +36,14 @@ const soon = [
         <span class="nav-desc">{m.desc}</span>
       </a>
     ))}
-    <div class="nav-soon" aria-label="준비 중인 메뉴">
+    {soon.length > 0 && <div class="nav-soon" aria-label="준비 중인 메뉴">
       {soon.map((m) => (
         <span class="nav-item is-soon">
           <span class="nav-label">{m.label}</span>
           <span class="nav-desc">{m.when}에서 열립니다</span>
         </span>
       ))}
-    </div>
+    </div>}
   </nav>
 
   <div class="rail-foot">

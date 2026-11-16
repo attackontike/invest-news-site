@@ -1,0 +1,533 @@
+{
+  "name": "투자 뉴스 - T3 데이터·일정",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "40 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "00000089-0000-4000-8000-01a1dfdaf77e",
+      "name": "매일 06:40",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nconst now = new Date();\nconst kst = (d) => new Date(d.getTime() + 9 * 3600_000).toISOString().slice(0, 10);\nconst cfg = {\n  githubOwner: 'YOUR-GITHUB-ID',\n  githubRepo: 'invest-news-site',\n  githubBranch: 'main',\n  supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n  ecosKey: '', // 한국은행 ECOS 인증키 (주소 안에 들어가는 방식이라 자격 증명 대신 여기에 넣습니다)\n  embeddingModel: 'gemini-embedding-001',\n  embedDim: 768,\n\n  // 미국 지표 (FRED). transform: level 그대로, yoy 전년 대비 %, diff 전월 대비 변화\n  // change: last 직전 값과 비교, lastDifferent 값이 바뀌기 전과 비교 (기준금리처럼 자주 안 바뀌는 지표)\n  fred: [\n    { id: 'DFEDTARU', name: '미국 기준금리 (상단)', unit: '%', transform: 'level', change: 'lastDifferent', limit: 400 },\n    { id: 'CPIAUCSL', name: '미국 소비자물가 (전년비)', unit: '%', transform: 'yoy', limit: 40 },\n    { id: 'CPILFESL', name: '미국 근원 소비자물가 (전년비)', unit: '%', transform: 'yoy', limit: 40 },\n    { id: 'UNRATE', name: '미국 실업률', unit: '%', transform: 'level', limit: 30 },\n    { id: 'PAYEMS', name: '미국 비농업 고용 (전월비)', unit: '천 명', transform: 'diff', limit: 30 },\n    { id: 'DGS10', name: '미국 10년물 국채금리', unit: '%', transform: 'level', limit: 80 },\n    { id: 'DGS2', name: '미국 2년물 국채금리', unit: '%', transform: 'level', limit: 80 },\n  ],\n  // 한국 지표 (ECOS). stat 통계표 코드, cycle D(일)·M(월), item 항목 코드\n  ecos: [\n    { stat: '722Y001', cycle: 'D', item: '0101000', name: '한국 기준금리', unit: '%', transform: 'level', change: 'lastDifferent', days: 400 },\n    { stat: '731Y001', cycle: 'D', item: '0000001', name: '원/달러 환율', unit: '원', transform: 'level', days: 90 },\n    { stat: '817Y002', cycle: 'D', item: '010200000', name: '국고채 3년', unit: '%', transform: 'level', days: 90 },\n    { stat: '901Y009', cycle: 'M', item: '0', name: '한국 소비자물가 (전년비)', unit: '%', transform: 'yoy', months: 30 },\n  ],\n\n  // FRED 발표 일정 중 챙길 것: [이름에 들어 있는 말, 한국어 이름, 중요도 1~3, 미국 동부 시각]\n  fredReleases: [\n    ['Consumer Price Index', '미국 소비자물가(CPI)', 3, '08:30'],\n    ['Employment Situation', '미국 고용보고서', 3, '08:30'],\n    ['Producer Price Index', '미국 생산자물가(PPI)', 2, '08:30'],\n    ['Gross Domestic Product', '미국 GDP', 2, '08:30'],\n    ['Personal Income and Outlays', '미국 PCE 물가', 2, '08:30'],\n    ['Advance Monthly Sales for Retail', '미국 소매판매', 2, '08:30'],\n    ['Job Openings and Labor Turnover', '미국 구인·이직(JOLTS)', 1, '10:00'],\n  ],\n  // 직접 넣는 일정 (FOMC, 한국은행 금통위 등 1년에 몇 번 정해지는 것). 날짜는 각 기관 홈페이지에서 확인해 추가\n  //   미국: { date: '미국 날짜', timeEt: '14:00', market: 'US', name: 'FOMC 금리 결정', importance: 3 }  → 한국 시간으로 바꿔 저장\n  //   한국: { date: '2026-11-27', time: '10:00', market: 'KR', name: '한국은행 기준금리 결정', importance: 3 }\n  manualEvents: [],\n  // 매달 같은 날 나오는 일정\n  monthlyEvents: [{ day: 1, time: '09:00', market: 'KR', name: '수출입 동향 (산업통상자원부)', importance: 2 }],\n  eventDays: 30, // 앞으로 며칠 치 일정을 저장할지\n};\n\nreturn [{\n  json: {\n    ...cfg,\n    nowIso: now.toISOString(),\n    today: kst(now),\n    until: kst(new Date(now.getTime() + cfg.eventDays * 86400_000)),\n  },\n}];\n"
+      },
+      "id": "0000008a-0000-4000-8000-01a1dfdaf77e",
+      "name": "설정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// FRED 요청: 지표마다 최근 관측값 + 발표 일정 1개\nconst c = $('설정').first().json;\nconst out = c.fred.map((s) => ({\n  json: { kind: 'series', series: s, url: `https://api.stlouisfed.org/fred/series/observations?series_id=${s.id}&file_type=json&sort_order=desc&limit=${s.limit}` },\n}));\nout.push({\n  json: { kind: 'releases', url: `https://api.stlouisfed.org/fred/releases/dates?file_type=json&realtime_start=${c.today}&realtime_end=${c.until}&include_release_dates_with_no_data=true&order_by=release_date&sort_order=asc&limit=1000` },\n});\nreturn out;\n"
+      },
+      "id": "0000008b-0000-4000-8000-01a1dfdaf77e",
+      "name": "FRED 요청 만들기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 4,
+              "batchInterval": 1000
+            }
+          },
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "0000008c-0000-4000-8000-01a1dfdaf77e",
+      "name": "FRED 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 한국은행 ECOS 요청. 인증키가 없으면 건너뛰기 표시가 붙은 요청 1개\nconst c = $('설정').first().json;\nif (!c.ecosKey) return [{ json: { skip: true, url: 'https://ecos.bok.or.kr/api/StatisticSearch/sample/json/kr/1/1/722Y001/M/202601/202601/0101000' } }];\nconst now = new Date(c.nowIso);\nconst ymd = (d) => new Date(d.getTime() + 9 * 3600_000).toISOString().slice(0, 10).replace(/-/g, '');\nreturn c.ecos.map((s) => {\n  let start, end;\n  if (s.cycle === 'M') {\n    const d = new Date(now.getTime() - s.months * 31 * 86400_000);\n    start = ymd(d).slice(0, 6); end = ymd(now).slice(0, 6);\n  } else {\n    start = ymd(new Date(now.getTime() - s.days * 86400_000)); end = ymd(now);\n  }\n  return { json: { series: s, url: `https://ecos.bok.or.kr/api/StatisticSearch/${encodeURIComponent(c.ecosKey)}/json/kr/1/1000/${s.stat}/${s.cycle}/${start}/${end}/${s.item}` } };\n});\n"
+      },
+      "id": "0000008d-0000-4000-8000-01a1dfdaf77e",
+      "name": "ECOS 요청 만들기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 2,
+              "batchInterval": 1000
+            }
+          },
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "0000008e-0000-4000-8000-01a1dfdaf77e",
+      "name": "ECOS 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/indicators?select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "0000008f-0000-4000-8000-01a1dfdaf77e",
+      "name": "기존 지표 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 지표 계산, 경제 일정 정리, 사이트용 market.json, 새 관측값의 지식베이스 조각을 만듭니다.\nconst c = $('설정').first().json;\nconst paired = (it) => { const p = it.pairedItem; return Array.isArray(p) ? (p[0] ? p[0].item : 0) : p && typeof p.item === 'number' ? p.item : 0; };\nconst r2 = (v, d = 2) => Math.round(v * 10 ** d) / 10 ** d;\nconst report = [];\n\n// ---------- 시계열 변환 ----------\nfunction transform(points, how, monthly) {\n  // points: [[date, value]] 오름차순. 월간 날짜는 YYYY-MM\n  if (how === 'yoy') {\n    const map = Object.fromEntries(points);\n    return points.map(([d, v]) => {\n      const [y, m] = d.split('-').map(Number);\n      const prev = map[`${y - 1}-${String(m).padStart(2, '0')}`];\n      return prev ? [d, r2((v / prev - 1) * 100, 1)] : null;\n    }).filter(Boolean);\n  }\n  if (how === 'diff') return points.slice(1).map(([d, v], i) => [d, r2(v - points[i][1], 0)]);\n  return points;\n}\nfunction summarize(key, s, points, market, source, url) {\n  if (!points.length) return null;\n  const last = points[points.length - 1];\n  let prev = points.length > 1 ? points[points.length - 2] : null;\n  if (s.change === 'lastDifferent') prev = [...points].reverse().find((p) => p[1] !== last[1]) || prev;\n  return {\n    series_key: key, market, name: s.name, unit: s.unit, latest_date: last[0], latest_value: r2(last[1], 4),\n    prev_value: prev ? r2(prev[1], 4) : null, change: prev ? r2(last[1] - prev[1]) : null,\n    history: points.slice(-30), source, updated_at: c.nowIso, _url: url,\n  };\n}\n\nconst rows = [];\nlet releases = [];\n\n// ---------- FRED ----------\nconst fReq = $('FRED 요청 만들기').all().map((i) => i.json);\nfor (const it of $('FRED 조회').all()) {\n  const req = fReq[paired(it)] || {};\n  const j = it.json || {};\n  const b = j.body || {};\n  if (j.error || !j.statusCode || j.statusCode >= 400) { report.push(`FRED ${req.kind === 'series' ? req.series.id : '일정'}: 실패 ${j.statusCode || ''} ${(b && (b.error_message || '')) || ''}`.trim()); continue; }\n  if (req.kind === 'releases') { releases = b.release_dates || []; continue; }\n  const s = req.series;\n  const monthly = s.transform !== 'level' || ['UNRATE'].includes(s.id);\n  const pts = (b.observations || [])\n    .filter((o) => o.value !== '.' && o.value !== '')\n    .map((o) => [monthly ? o.date.slice(0, 7) : o.date, Number(o.value)])\n    .filter((p) => Number.isFinite(p[1]))\n    .sort((a, b2) => a[0].localeCompare(b2[0]));\n  const row = summarize(`US:${s.id}`, s, transform(pts, s.transform, monthly), 'US', 'FRED', `https://fred.stlouisfed.org/series/${s.id}`);\n  if (row) rows.push(row); else report.push(`FRED ${s.id}: 값 없음`);\n}\n\n// ---------- ECOS ----------\nconst eReq = $('ECOS 요청 만들기').all().map((i) => i.json);\nfor (const it of $('ECOS 조회').all()) {\n  const req = eReq[paired(it)] || {};\n  if (req.skip) { report.push('ECOS: 인증키 없음 (설정 노드 ecosKey)'); continue; }\n  const j = it.json || {};\n  const b = j.body || {};\n  const s = req.series;\n  const list = (b.StatisticSearch || {}).row;\n  if (!Array.isArray(list)) { report.push(`ECOS ${s.name}: ${(b.RESULT && `${b.RESULT.CODE} ${b.RESULT.MESSAGE}`) || `실패 ${j.statusCode || ''}`}`); continue; }\n  const fmt = (t) => (t.length === 6 ? `${t.slice(0, 4)}-${t.slice(4, 6)}` : `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6, 8)}`);\n  const pts = list.map((r) => [fmt(String(r.TIME)), Number(String(r.DATA_VALUE).replace(/,/g, ''))]).filter((p) => Number.isFinite(p[1])).sort((a, b2) => a[0].localeCompare(b2[0]));\n  const row = summarize(`KR:${s.stat}:${s.item}`, s, transform(pts, s.transform, s.cycle === 'M'), 'KR', '한국은행 ECOS', 'https://ecos.bok.or.kr/');\n  if (row) rows.push(row); else report.push(`ECOS ${s.name}: 값 없음`);\n}\n\n// ---------- 경제 일정 (한국 시간) ----------\nfunction usDst(y, m, d) {\n  const dow = (yy, mm, dd) => new Date(Date.UTC(yy, mm - 1, dd)).getUTCDay();\n  const start = 8 + ((7 - dow(y, 3, 1)) % 7); // 3월 둘째 일요일\n  const end = 1 + ((7 - dow(y, 11, 1)) % 7); // 11월 첫째 일요일\n  const v = m * 100 + d;\n  return v >= 300 + start && v < 1100 + end;\n}\nfunction etToKst(date, hhmm) {\n  const [y, m, d] = date.split('-').map(Number);\n  const [h, mi] = hhmm.split(':').map(Number);\n  const utc = Date.UTC(y, m - 1, d, h + (usDst(y, m, d) ? 4 : 5), mi);\n  const k = new Date(utc + 9 * 3600_000).toISOString();\n  return { date: k.slice(0, 10), time: k.slice(11, 16) };\n}\nconst events = new Map();\nconst add = (e) => { if (e.event_date >= c.today && e.event_date <= c.until) events.set(e.event_key, { ...e, updated_at: c.nowIso }); };\nfor (const r of releases) {\n  const rule = c.fredReleases.find(([kw]) => String(r.release_name).includes(kw));\n  if (!rule) continue;\n  const k = etToKst(r.date, rule[3]);\n  add({ event_key: `fred:${r.release_id}:${r.date}`, event_date: k.date, event_time: k.time, market: 'US', name: rule[1], importance: rule[2], source: 'FRED' });\n}\nfor (const e of c.manualEvents || []) {\n  if (!e || !e.date || !e.name) continue;\n  const k = e.market === 'US' && e.timeEt ? etToKst(e.date, e.timeEt) : { date: e.date, time: e.time || null };\n  add({ event_key: `manual:${e.date}:${e.name}`, event_date: k.date, event_time: k.time, market: e.market || 'KR', name: e.name, importance: e.importance || 2, source: '직접 입력' });\n}\nfor (const e of c.monthlyEvents || []) {\n  const [y, m] = c.today.split('-').map(Number);\n  for (let i = 0; i < 3; i++) {\n    const dt = new Date(Date.UTC(y, m - 1 + i, e.day));\n    const ds = dt.toISOString().slice(0, 10);\n    add({ event_key: `monthly:${ds}:${e.name}`, event_date: ds, event_time: e.time || null, market: e.market, name: e.name, importance: e.importance || 1, source: '매월 일정' });\n  }\n}\nconst eventRows = [...events.values()].sort((a, b2) => (a.event_date + (a.event_time || '99')).localeCompare(b2.event_date + (b2.event_time || '99')));\n\nif (!rows.length && !eventRows.length) throw new Error('지표와 일정을 하나도 가져오지 못했습니다.\\n' + report.join('\\n'));\n\n// ---------- 사이트 파일: 이번에 못 가져온 지표는 DB의 이전 값 유지 ----------\nconst existing = Object.fromEntries($('기존 지표 조회').all().map((i) => i.json).filter((r) => r && r.series_key).map((r) => [r.series_key, r]));\nconst order = [...c.ecos.map((s) => `KR:${s.stat}:${s.item}`), ...c.fred.map((s) => `US:${s.id}`)];\nconst fresh = Object.fromEntries(rows.map((r) => [r.series_key, r]));\nconst site = {\n  updatedAt: c.nowIso,\n  indicators: order.map((k) => fresh[k] || existing[k]).filter(Boolean).map((r) => ({\n    key: r.series_key, market: r.market, name: r.name, unit: r.unit, date: r.latest_date, value: r.latest_value === null ? null : Number(r.latest_value),\n    prev: r.prev_value === null ? null : Number(r.prev_value), change: r.change === null ? null : Number(r.change), source: r.source, history: r.history || [],\n  })),\n  events: eventRows.map((e) => ({ date: e.event_date, time: e.event_time, market: e.market, name: e.name, importance: e.importance, source: e.source })),\n};\nfunction b64(str) {\n  const by = [];\n  for (let i = 0; i < str.length; i++) {\n    let cp = str.charCodeAt(i);\n    if (cp >= 0xd800 && cp < 0xdc00 && i + 1 < str.length) { const lo = str.charCodeAt(i + 1); if (lo >= 0xdc00 && lo < 0xe000) { cp = 0x10000 + ((cp - 0xd800) << 10) + (lo - 0xdc00); i++; } }\n    if (cp < 0x80) by.push(cp); else if (cp < 0x800) by.push(0xc0 | (cp >> 6), 0x80 | (cp & 63)); else if (cp < 0x10000) by.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63)); else by.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n  }\n  const T = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';\n  let out = '';\n  for (let i = 0; i < by.length; i += 3) { const n = (by[i] << 16) | ((by[i + 1] || 0) << 8) | (by[i + 2] || 0); out += T[(n >> 18) & 63] + T[(n >> 12) & 63] + (i + 1 < by.length ? T[(n >> 6) & 63] : '=') + (i + 2 < by.length ? T[n & 63] : '='); }\n  return out;\n}\n\n// ---------- 지식베이스: 새 관측값만 ----------\nconst num = (v, u) => (v === null || v === undefined ? '-' : `${Number(v).toLocaleString('en-US')}${u === '%' ? '%' : ` ${u}`}`);\nconst kbChunks = rows\n  .filter((r) => !existing[r.series_key] || existing[r.series_key].latest_date !== r.latest_date)\n  .map((r) => ({\n    chunk_key: `data:${r.series_key}:${r.latest_date}`, kind: 'data', is_ai: false, tier: 'T3', source_grade: '공시', market: r.market, tickers: [],\n    source: r.source, url: r._url, published_at: c.nowIso,\n    content: `${r.name} ${r.latest_date}: ${num(r.latest_value, r.unit)}${r.prev_value !== null ? ` (이전 ${num(r.prev_value, r.unit)}, 변화 ${r.change > 0 ? '+' : ''}${r.change})` : ''}. 출처 ${r.source}.`,\n  }));\n\nreturn [{\n  json: {\n    indicatorRows: rows.map(({ _url, ...r }) => r),\n    eventRows,\n    sitePath: 'src/data/market.json',\n    siteContent: b64(JSON.stringify(site, null, 2) + '\\n'),\n    kbChunks,\n    report,\n    counts: { indicators: rows.length, events: eventRows.length, kb: kbChunks.length },\n  },\n}];\n"
+      },
+      "id": "00000090-0000-4000-8000-01a1dfdaf77e",
+      "name": "데이터 정리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/indicators?on_conflict=series_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('데이터 정리').first().json.indicatorRows) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "00000091-0000-4000-8000-01a1dfdaf77e",
+      "name": "지표 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/econ_events?on_conflict=event_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('데이터 정리').first().json.eventRows) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "00000092-0000-4000-8000-01a1dfdaf77e",
+      "name": "일정 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.githubRepo }}/contents/src/data/market.json?ref={{ $('설정').first().json.githubBranch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "00000093-0000-4000-8000-01a1dfdaf77e",
+      "name": "GitHub 기존 파일 확인",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.githubRepo }}/contents/src/data/market.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: 'data: ' + $('설정').first().json.today, content: $('데이터 정리').first().json.siteContent, branch: $('설정').first().json.githubBranch, ...($json.sha ? { sha: $json.sha } : {}) }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "00000094-0000-4000-8000-01a1dfdaf77e",
+      "name": "GitHub 커밋",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        300
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 새 관측값을 Gemini 임베딩 요청으로 만듭니다. 새 값이 없으면 여기서 끝납니다.\nconst c = $('설정').first().json;\nconst chunks = $('데이터 정리').first().json.kbChunks || [];\nif (!chunks.length) return [];\nreturn [{ json: { chunks, body: { requests: chunks.map((k) => ({ model: `models/${c.embeddingModel}`, content: { parts: [{ text: k.content }] }, taskType: 'RETRIEVAL_DOCUMENT', outputDimensionality: c.embedDim })) } } }];\n"
+      },
+      "id": "00000095-0000-4000-8000-01a1dfdaf77e",
+      "name": "지식베이스 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('설정').first().json.embeddingModel }}:batchEmbedContents",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "00000096-0000-4000-8000-01a1dfdaf77e",
+      "name": "임베딩",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3120,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// 임베딩 결과를 조각과 짝지어 저장할 행을 만듭니다. 768차원으로 줄인 벡터는 길이를 1로 맞춥니다.\nconst c = $('설정').first().json;\nconst reqs = $('지식베이스 준비').all();\nfunction paired(item) {\n  const p = item.pairedItem;\n  if (Array.isArray(p)) return p[0] ? p[0].item : 0;\n  return p && typeof p.item === 'number' ? p.item : 0;\n}\nconst rows = [];\nfor (const it of $input.all()) {\n  const req = reqs[paired(it)];\n  const embs = (it.json && it.json.embeddings) || [];\n  if (!req || embs.length !== req.json.chunks.length) throw new Error('임베딩 결과 개수가 요청과 다릅니다');\n  req.json.chunks.forEach((k, i) => {\n    const v = embs[i].values || [];\n    if (v.length !== c.embedDim) throw new Error(`임베딩 크기 ${v.length} ≠ embedDim ${c.embedDim}`);\n    const norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0)) || 1;\n    rows.push({ ...k, embedding: v.map((x) => Math.round((x / norm) * 1e6) / 1e6) });\n  });\n}\nif (!rows.length) return [];\nreturn [{ json: { rows } }];\n"
+      },
+      "id": "00000097-0000-4000-8000-01a1dfdaf77e",
+      "name": "지식베이스 저장 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/kb_chunks?on_conflict=chunk_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.rows) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "00000098-0000-4000-8000-01a1dfdaf77e",
+      "name": "지식베이스 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3600,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "매일 06:40": {
+      "main": [
+        [
+          {
+            "node": "설정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "설정": {
+      "main": [
+        [
+          {
+            "node": "FRED 요청 만들기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FRED 요청 만들기": {
+      "main": [
+        [
+          {
+            "node": "FRED 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FRED 조회": {
+      "main": [
+        [
+          {
+            "node": "ECOS 요청 만들기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ECOS 요청 만들기": {
+      "main": [
+        [
+          {
+            "node": "ECOS 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ECOS 조회": {
+      "main": [
+        [
+          {
+            "node": "기존 지표 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기존 지표 조회": {
+      "main": [
+        [
+          {
+            "node": "데이터 정리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "데이터 정리": {
+      "main": [
+        [
+          {
+            "node": "지표 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지표 저장": {
+      "main": [
+        [
+          {
+            "node": "일정 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "일정 저장": {
+      "main": [
+        [
+          {
+            "node": "GitHub 기존 파일 확인",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub 기존 파일 확인": {
+      "main": [
+        [
+          {
+            "node": "GitHub 커밋",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub 커밋": {
+      "main": [
+        [
+          {
+            "node": "지식베이스 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지식베이스 준비": {
+      "main": [
+        [
+          {
+            "node": "임베딩",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "임베딩": {
+      "main": [
+        [
+          {
+            "node": "지식베이스 저장 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지식베이스 저장 준비": {
+      "main": [
+        [
+          {
+            "node": "지식베이스 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Seoul",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

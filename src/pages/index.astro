@@ -5,8 +5,10 @@ import NewsRow from '../components/NewsRow.astro';
 import Empty from '../components/Empty.astro';
 import { loadNews, RULES } from '../lib/news';
 import { fmtDateTime, briefingHtml } from '../lib/format';
+import { upcoming } from '../lib/market';
 
 const { editions, top, topFilings } = await loadNews();
+const soonEvents = upcoming(1);
 const [latest, ...earlier] = editions;
 ---
 <BaseLayout title="시장 브리핑" description="국내·미국 시장 뉴스 요약" section="brief">
@@ -37,6 +39,23 @@ const [latest, ...earlier] = editions;
           </details>
         )}
       </section>
+
+      {soonEvents.length > 0 && (
+        <section class="today-ev" aria-labelledby="tev-h">
+          <h2 id="tev-h" class="sec-h">오늘·내일 경제 일정</h2>
+          <ul class="ev-list">
+            {soonEvents.map((e) => (
+              <li data-imp={e.importance}>
+                <span class="ev-time">{e.date.slice(5).replace('-', '.')} {e.time ?? ''}</span>
+                <span class="ev-flag">{e.market === 'US' ? '미국' : '한국'}</span>
+                <span class="ev-name">{e.name}</span>
+                <span class="ev-imp">{'★'.repeat(e.importance)}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="sec-note"><a href="/data">지표와 2주 일정 보기</a></p>
+        </section>
+      )}
 
       {topFilings.length > 0 && (
         <section class="filings-top" aria-labelledby="fl-h">

@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "0000002e-0000-4000-8000-01a1dfae61a0",
+      "id": "0000002e-0000-4000-8000-01a1dfdaf77a",
       "name": "매주 일요일",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -25,7 +25,7 @@
       "parameters": {
         "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nreturn [{\n  json: {\n    supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n    // SEC는 연락처가 담긴 User-Agent를 요구합니다. 이메일을 본인 것으로 바꾸세요\n    secUserAgent: 'invest-news-site your-email@example.com',\n  },\n}];\n"
       },
-      "id": "0000002f-0000-4000-8000-01a1dfae61a0",
+      "id": "0000002f-0000-4000-8000-01a1dfdaf77a",
       "name": "설정",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -50,7 +50,7 @@
           }
         }
       },
-      "id": "00000030-0000-4000-8000-01a1dfae61a0",
+      "id": "00000030-0000-4000-8000-01a1dfdaf77a",
       "name": "DART 고유번호 파일",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -65,7 +65,7 @@
         "binaryPropertyName": "data",
         "outputPrefix": "file_"
       },
-      "id": "00000031-0000-4000-8000-01a1dfae61a0",
+      "id": "00000031-0000-4000-8000-01a1dfdaf77a",
       "name": "압축 풀기",
       "type": "n8n-nodes-base.compression",
       "typeVersion": 1.1,
@@ -81,7 +81,7 @@
         "destinationKey": "xml",
         "options": {}
       },
-      "id": "00000032-0000-4000-8000-01a1dfae61a0",
+      "id": "00000032-0000-4000-8000-01a1dfdaf77a",
       "name": "텍스트로 읽기",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
@@ -107,7 +107,7 @@
           "timeout": 60000
         }
       },
-      "id": "00000033-0000-4000-8000-01a1dfae61a0",
+      "id": "00000033-0000-4000-8000-01a1dfdaf77a",
       "name": "SEC 티커 목록",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -121,7 +121,7 @@
       "parameters": {
         "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// DART 고유번호 파일(상장사만)과 SEC 티커 목록으로 종목 사전 행을 만듭니다.\nconst now = new Date().toISOString();\nconst rows = new Map();\n\n// 국내: <list><corp_code/><corp_name/><stock_code/>…</list>\nconst xml = String(($('텍스트로 읽기').first().json || {}).xml || '');\nconst re = /<list>([\\s\\S]*?)<\\/list>/g;\nconst pick = (b, t) => { const m = b.match(new RegExp(`<${t}>([\\\\s\\\\S]*?)</${t}>`)); return m ? m[1].trim() : ''; };\nlet m;\nlet kr = 0;\nwhile ((m = re.exec(xml))) {\n  const b = m[1];\n  const code = pick(b, 'stock_code');\n  if (!/^[0-9A-Z]{6}$/.test(code)) continue; // 상장사만 종목코드가 있음\n  const name = pick(b, 'corp_name');\n  rows.set(`KR:${code}`, { market: 'KR', code, name, name_key: nameKey(name), corp_code: pick(b, 'corp_code'), cik: null, updated_at: now });\n  kr++;\n}\nif (kr < 1000) throw new Error(`국내 상장사가 ${kr}개만 읽혔습니다. DART 인증키와 \"압축 풀기\"·\"텍스트로 읽기\" 결과를 확인하세요.`);\n\n// 미국: {\"0\":{\"cik_str\":320193,\"ticker\":\"AAPL\",\"title\":\"Apple Inc.\"}, …}\nconst sec = $input.first().json || {};\nlet us = 0;\nfor (const v of Object.values(sec)) {\n  if (!v || !v.ticker) continue;\n  const code = String(v.ticker).toUpperCase();\n  rows.set(`US:${code}`, { market: 'US', code, name: v.title, name_key: nameKey(v.title), corp_code: null, cik: String(v.cik_str), updated_at: now });\n  us++;\n}\nif (us < 1000) throw new Error(`미국 종목이 ${us}개만 읽혔습니다. \"설정\" 노드의 secUserAgent(이메일 포함)를 확인하세요.`);\n\nreturn [{ json: { rows: [...rows.values()], counts: { kr, us } } }];\n"
       },
-      "id": "00000034-0000-4000-8000-01a1dfae61a0",
+      "id": "00000034-0000-4000-8000-01a1dfdaf77b",
       "name": "사전 행 만들기",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -152,7 +152,7 @@
           "timeout": 120000
         }
       },
-      "id": "00000035-0000-4000-8000-01a1dfae61a0",
+      "id": "00000035-0000-4000-8000-01a1dfdaf77b",
       "name": "사전 저장",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,

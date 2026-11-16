@@ -1,4 +1,4 @@
-# 투자 뉴스 브리프 (3단계까지)
+# 투자 뉴스 브리프 (4-A단계까지)
 
 국내·미국 시장 뉴스를 매시간 모아 Supabase에 쌓고, 하루 4번(07:00, 12:00, 16:30, 22:00) Gemini로 요약해 Astro 사이트와 Discord에 게시합니다. 요약한 기사와 브리핑은 지식베이스(pgvector)에도 쌓입니다.
 
@@ -43,6 +43,14 @@
 - **`/ask question:질문 (days:기간)`**: 지식베이스를 종목 검색 + 전체 검색으로 찾아, 근거 번호(S1…)를 원문 링크로 바꾼 답변을 Discord로. 답변은 지식베이스에 다시 저장하지 않음
 - `n8n/ask.json` (17노드), `discord-command.json` 갱신 (질문 답변 실행 연결), 등록 스크립트에 `/ask` 추가
 - 새 키·스키마·사이트 변경 없음. 설치 순서는 "설치 가이드 (3-C)"
+
+## 4-A에서 추가된 것
+
+- **T3 데이터·일정** (`n8n/t3-data-calendar.json`, 매일 06:40): FRED 미국 지표 7개 + 한국은행 ECOS 한국 지표 4개, 앞으로 30일 경제 일정(FRED 발표 일정 + 직접 넣는 FOMC·금통위 + 매월 일정). 미국 시각은 서머타임을 반영해 한국 시간으로 변환. `src/data/market.json`을 매일 커밋하고, 새 지표 값은 지식베이스에 저장
+- **일정 예고** (`n8n/event-preview.json`, 매일 20:00): 내일 중요 일정을 Discord로
+- 사이트 "데이터·일정"(`/data`), 시장 브리핑의 "오늘·내일 경제 일정"
+- `supabase/schema-4.sql`: `indicators`, `econ_events`. 자격 증명 FRED (Query Auth, `api_key`) 추가, ECOS 키는 T3 설정 노드
+- **주의:** 앞으로 `src/`를 덮어쓸 때 `src/data/market.json`은 덮어쓰지 않기 (n8n이 매일 갱신)
 
 ## 폴더
 
