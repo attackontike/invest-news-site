@@ -1,4 +1,5 @@
 import { getCollection } from 'astro:content';
+import { stocks, stocksUpdatedAt } from './stocks';
 
 // 화면 기준은 여기서 바꿉니다.
 export const RULES = {
@@ -71,8 +72,15 @@ async function build() {
   };
   const topFilings = filings.filter((it) => within(it, RULES.topHours)).sort(byImp).slice(0, RULES.topFilings);
 
-  // 관심 종목: 마지막 게시 때의 목록
-  const watchlist: Watch[] = days.length ? (days[0].data.watchlist as Watch[]) : [];
+  // 관심 종목: 게시 파일과 종목 데이터 파일 중 더 최근에 만들어진 쪽의 목록을 씀
+  // (종목 데이터 워크플로만 실행해도 새로 추가·삭제한 종목이 바로 반영되도록)
+  const digestWatch: Watch[] = days.length ? (days[0].data.watchlist as Watch[]) : [];
+  const digestAt = days[0]?.data.generatedAt ?? '';
+  const stockList = Object.values(stocks);
+  const watchlist: Watch[] =
+    stocksUpdatedAt && stocksUpdatedAt > digestAt && stockList.length
+      ? stockList.map((s) => ({ market: s.market, code: s.code, name: s.name }))
+      : digestWatch;
   const watchSet = new Set(watchlist.map(tkey));
   const watchGroups = watchlist.map((w) => ({
     ...w,
