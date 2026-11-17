@@ -1,4 +1,5 @@
 import market from '../data/market.json';
+import { stocks } from './stocks';
 
 export type Indicator = {
   key: string; market: 'KR' | 'US'; name: string; unit: string; date: string; value: number | null;
@@ -11,10 +12,18 @@ export const indicators = ((market as any).indicators ?? []) as Indicator[];
 export const events = ((market as any).events ?? []) as EconEvent[];
 
 export const kstToday = () => new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
+// 경제 일정 + 관심 종목(미국) 실적 발표일
+const earningsEvents: EconEvent[] = Object.values(stocks)
+  .filter((s) => s.nextEarnings)
+  .map((s) => ({ date: s.nextEarnings!.date, time: s.nextEarnings!.time, market: s.market, name: `${s.name}(${s.code}) 실적 발표`, importance: 2, source: 'Finnhub' }));
 export function upcoming(days: number) {
   const today = kstToday();
   const until = new Date(Date.parse(today) + days * 86400_000).toISOString().slice(0, 10);
-  return events.filter((e) => e.date >= today && e.date <= until);
+  const seen = new Set<string>();
+  return [...events, ...earningsEvents]
+    .filter((e) => e.date >= today && e.date <= until)
+    .filter((e) => { const k = `${e.date}:${e.name}`; if (seen.has(k)) return false; seen.add(k); return true; })
+    .sort((a, b) => (a.date + (a.time ?? '99')).localeCompare(b.date + (b.time ?? '99')));
 }
 
 // 1 미만·10 미만 값(유로/달러 1.0842 등)은 소수점을 더 보여 줌

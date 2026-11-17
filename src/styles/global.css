@@ -283,3 +283,23 @@ code { font-size: .875em; padding: .0625rem .3125rem; border-radius: 4px; backgr
 }
 .ind-value, .ind-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 26rem) { .spark { width: 84px; } }
+
+/* 4-B: 종목 페이지 */
+.watch-fin { margin: -.25rem 0 .75rem; font-size: .875rem; color: var(--muted); }
+.watch-block .sec-h a { text-decoration: none; }
+.watch-block .sec-h a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.stock-code { font-size: 1rem; font-weight: 500; color: var(--muted); margin-left: .25rem; }
+.fin-block { margin-bottom: 2.5rem; }
+.fin-block .sec-h { margin-bottom: .75rem; }
+.table-wrap { overflow-x: auto; }
+.fin-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .9375rem; min-width: 28rem; }
+.fin-table th, .fin-table td { padding: .5rem .625rem; border-bottom: 1px solid var(--rule); text-align: right; white-space: nowrap; }
+.fin-table thead th { font-size: .8125rem; color: var(--muted); font-weight: 600; }
+.fin-table th[scope='row'], .fin-table thead th:first-child { text-align: left; }
+.fin-table small { display: block; font-size: .75rem; color: var(--muted); }
+.fin-table .up, .fin-table small.up { color: var(--rise); }
+.fin-table .down, .fin-table small.down { color: var(--fall); }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .625rem; margin: 0 0 1rem; }
+.metric-grid div { padding: .75rem .875rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.metric-grid dt { font-size: .8125rem; color: var(--muted); }
+.metric-grid dd { margin: .125rem 0 0; font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; }

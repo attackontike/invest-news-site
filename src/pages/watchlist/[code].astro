@@ -1,0 +1,107 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NewsRow from '../../components/NewsRow.astro';
+import { loadNews, kstDate } from '../../lib/news';
+import { stocks, stockOf, won, pct, num, usdCap } from '../../lib/stocks';
+import { fmtDay, fmtDateTime } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const { watchlist } = await loadNews();
+  const list = new Map<string, { market: string; code: string; name: string }>();
+  for (const w of watchlist) list.set(`${w.market}:${w.code}`, w);
+  for (const s of Object.values(stocks)) if (!list.has(`${s.market}:${s.code}`)) list.set(`${s.market}:${s.code}`, s);
+  return [...list.values()].map((w) => ({ params: { code: w.code }, props: { w } }));
+}
+const { w } = Astro.props;
+const { timelineOf, watchSet, ref } = await loadNews();
+const s = stockOf(w.market, w.code);
+const items = timelineOf(w.market, w.code).slice(0, 60);
+const reports = (await getCollection('research'))
+  .filter((r) => r.data.tickers.some((t) => t.code === w.code && t.market === w.market))
+  .sort((a, b) => b.data.createdAt.localeCompare(a.data.createdAt));
+const months = [...new Set(items.map((it) => kstDate(it.publishedAt).slice(0, 7)))];
+const watched = watchSet.has(`${w.market}:${w.code}`);
+const qs = s?.financials.quarters ?? [];
+const yoyClass = (v: number | null) => (v === null ? '' : v > 0 ? 'up' : v < 0 ? 'down' : '');
+---
+<BaseLayout title={`${w.name} (${w.code})`} description={`${w.name} 종목 페이지`} section="watchlist">
+  <p class="crumb"><a href="/watchlist">관심 종목</a></p>
+  <header class="page-head stock-head">
+    <h1>{w.name} <span class="stock-code">{w.code}</span></h1>
+    <p class="lead">{w.market === 'KR' ? '국내' : '미국'} 상장{watched ? ' · ★ 관심 종목' : ''}{s?.nextEarnings && <> · 다음 실적 발표 <strong>{fmtDay(s.nextEarnings.date)} {s.nextEarnings.time ?? ''}</strong> (한국 시간{s.nextEarnings.label ? `, 미국 ${s.nextEarnings.label}` : ''})</>}</p>
+  </header>
+
+  {s && w.market === 'KR' && qs.length > 0 && (
+    <section aria-labelledby="fin-h" class="fin-block">
+      <h2 id="fin-h" class="sec-h">분기 실적 <span class="ai-tag">DART 정기보고서 · 연결 기준</span></h2>
+      <div class="table-wrap">
+        <table class="fin-table">
+          <thead><tr><th scope="col">분기</th><th scope="col">매출</th><th scope="col">영업이익</th><th scope="col">순이익</th></tr></thead>
+          <tbody>
+            {qs.slice(0, 6).map((q) => (
+              <tr>
+                <th scope="row">{q.label}</th>
+                <td>{won(q.revenue)}{q.revenueYoY !== null && <small class={yoyClass(q.revenueYoY)}>{pct(q.revenueYoY)}</small>}</td>
+                <td>{won(q.op)}{q.opYoY !== null && <small class={yoyClass(q.opYoY)}>{pct(q.opYoY)}</small>}</td>
+                <td>{won(q.net)}{q.netYoY !== null && <small class={yoyClass(q.netYoY)}>{pct(q.netYoY)}</small>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="sec-note">단위 원 (조·억). 작은 글씨는 전년 같은 분기 대비. 4분기는 연간 실적에서 1~3분기 누적을 뺀 값입니다.</p>
+    </section>
+  )}
+
+  {s && w.market === 'US' && (
+    <section aria-labelledby="fin-h" class="fin-block">
+      <h2 id="fin-h" class="sec-h">주요 지표 <span class="ai-tag">Finnhub</span></h2>
+      <dl class="metric-grid">
+        <div><dt>PER</dt><dd>{num(s.metrics.pe, 1)}</dd></div>
+        <div><dt>EPS (최근 12개월)</dt><dd>{num(s.metrics.eps)}</dd></div>
+        <div><dt>매출 성장 (분기, 전년비)</dt><dd>{s.metrics.revenueGrowthQ !== null && s.metrics.revenueGrowthQ !== undefined ? pct(Math.round(s.metrics.revenueGrowthQ * 10) / 10) : '-'}</dd></div>
+        <div><dt>52주 고가 / 저가</dt><dd>{num(s.metrics.high52)} / {num(s.metrics.low52)}</dd></div>
+        <div><dt>시가총액</dt><dd>{usdCap(s.metrics.marketCap)}</dd></div>
+        <div><dt>순이익률 (최근 12개월)</dt><dd>{s.metrics.netMargin !== null && s.metrics.netMargin !== undefined ? `${num(s.metrics.netMargin, 1)}%` : '-'}</dd></div>
+      </dl>
+      {s.earnings.length > 0 && (
+        <div class="table-wrap">
+          <table class="fin-table">
+            <thead><tr><th scope="col">회계 분기</th><th scope="col">EPS 실제</th><th scope="col">예상</th><th scope="col">차이</th></tr></thead>
+            <tbody>
+              {s.earnings.map((e) => (
+                <tr>
+                  <th scope="row">{e.year} {e.quarter}Q <small>({e.period})</small></th>
+                  <td>{num(e.actual)}</td>
+                  <td>{num(e.estimate)}</td>
+                  <td class={yoyClass(e.surprisePercent)}>{pct(e.surprisePercent)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {s.nextEarnings?.epsEstimate !== null && s.nextEarnings?.epsEstimate !== undefined && <p class="sec-note">다음 분기 EPS 예상 {num(s.nextEarnings.epsEstimate)}</p>}
+    </section>
+  )}
+
+  {!s && <div class="empty"><p>재무 데이터가 아직 없습니다. n8n "종목 데이터" 워크플로가 실행되면(매일 06:50) 나타납니다.</p></div>}
+
+  {reports.length > 0 && (
+    <section aria-labelledby="rs-h" class="fin-block">
+      <h2 id="rs-h" class="sec-h">리서치</h2>
+      <ul class="facts">{reports.map((r) => <li><a href={`/research/${r.data.slug}`}>{r.data.title}</a> <span class="sec-note">{fmtDateTime(r.data.createdAt)} · {r.data.tone}</span></li>)}</ul>
+    </section>
+  )}
+
+  <section aria-labelledby="tl-h">
+    <h2 id="tl-h" class="sec-h">타임라인 <span class="sec-note">공시·뉴스 {items.length}건</span></h2>
+    {items.length === 0 ? <p class="none">아직 기록이 없습니다.</p> : months.map((m) => (
+      <section class="day">
+        <h3 class="day-h">{m.replace('-', '년 ')}월 <span>{items.filter((it) => kstDate(it.publishedAt).startsWith(m)).length}건</span></h3>
+        <ol class="rows">{items.filter((it) => kstDate(it.publishedAt).startsWith(m)).map((it) => <NewsRow item={it} compact />)}</ol>
+      </section>
+    ))}
+  </section>
+</BaseLayout>

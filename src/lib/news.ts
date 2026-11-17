@@ -85,7 +85,11 @@ async function build() {
         .map((e) => ({ date: days[0].data.date, ...e }))
     : [];
 
-  return { ref, generatedAt: days[0]?.data.generatedAt ?? null, news, filings, top, topFilings, editions, watchlist, watchSet, watchGroups };
+  // 종목 페이지 타임라인용: 기간 제한 없이 그 종목의 모든 기록 (최신순)
+  const timelineOf = (market: string, code: string) =>
+    [...all].filter((it) => it.tickers.some((t) => t.code === code && t.market === market)).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+
+  return { ref, generatedAt: days[0]?.data.generatedAt ?? null, news, filings, top, topFilings, editions, watchlist, watchSet, watchGroups, timelineOf };
 }
 
 export async function loadNews() {

@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHead from '../components/PageHead.astro';
 import NewsRow from '../components/NewsRow.astro';
 import { loadNews, RULES } from '../lib/news';
+import { stockOf, oneLine } from '../lib/stocks';
 
 const { watchGroups } = await loadNews();
 ---
@@ -25,8 +26,9 @@ const { watchGroups } = await loadNews();
       {watchGroups.map((w) => (
         <section class="watch-block" id={`w-${w.market}-${w.code}`} aria-labelledby={`h-${w.market}-${w.code}`}>
           <h2 class="sec-h" id={`h-${w.market}-${w.code}`}>
-            {w.name} <span class="watch-code">{w.code} · {w.market === 'KR' ? '국내' : '미국'}</span>
+            <a href={`/watchlist/${w.code}`}>{w.name}</a> <span class="watch-code">{w.code} · {w.market === 'KR' ? '국내' : '미국'}</span>
           </h2>
+          {oneLine(stockOf(w.market, w.code)) && <p class="watch-fin">{oneLine(stockOf(w.market, w.code))} · <a href={`/watchlist/${w.code}`}>종목 페이지</a></p>}
           {w.items.length ? (
             <ol class="rows">{w.items.map((it) => <NewsRow item={it} compact />)}</ol>
           ) : (
