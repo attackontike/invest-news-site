@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-17T11:50:21.822Z",
+  "updatedAt": "2026-11-17T21:50:01.860Z",
   "stocks": {
     "KR:005930": {
       "market": "KR",
@@ -177,13 +177,13 @@
       "name": "NVDA",
       "financials": {},
       "metrics": {
-        "pe": 20.3479,
+        "pe": 19.5095,
         "eps": 7.9108,
         "revenueGrowthQ": 105.85,
         "netMargin": 63.66,
         "high52": 243.37,
         "low52": 148.8,
-        "marketCap": 3924685.2,
+        "marketCap": 3762974,
         "dividendYield": 0.03349
       },
       "earnings": [
@@ -220,14 +220,7 @@
           "surprisePercent": 2
         }
       ],
-      "nextEarnings": {
-        "date": "2026-11-18",
-        "time": "06:05",
-        "usDate": "2026-11-17",
-        "hour": "amc",
-        "label": "장 마감 후",
-        "epsEstimate": 2.525
-      }
+      "nextEarnings": null
     },
     "US:TSLA": {
       "market": "US",
@@ -235,13 +228,13 @@
       "name": "TSLA",
       "financials": {},
       "metrics": {
-        "pe": 458.6313,
+        "pe": 446.314,
         "eps": 0.9095000000000001,
         "revenueGrowthQ": -0.17,
         "netMargin": 3.11,
         "high52": 498.83,
         "low52": 297.38,
-        "marketCap": 1476792.8,
+        "marketCap": 1437131.1,
         "dividendYield": null
       },
       "earnings": [
@@ -362,6 +355,176 @@
             "revenue": 4501764864977,
             "op": 464080194303,
             "net": 299257022272,
+            "revenueYoY": null,
+            "opYoY": null,
+            "netYoY": null
+          }
+        ]
+      },
+      "metrics": {},
+      "earnings": [],
+      "nextEarnings": null
+    },
+    "KR:001500": {
+      "market": "KR",
+      "code": "001500",
+      "name": "현대차증권",
+      "financials": {
+        "unit": "원",
+        "quarters": [
+          {
+            "label": "2026 3Q",
+            "revenue": null,
+            "op": 12664000000,
+            "net": 15356000000,
+            "revenueYoY": null,
+            "opYoY": -10,
+            "netYoY": 25.7
+          },
+          {
+            "label": "2026 2Q",
+            "revenue": null,
+            "op": 19120000000,
+            "net": 32724000000,
+            "revenueYoY": null,
+            "opYoY": null,
+            "netYoY": 57.9
+          },
+          {
+            "label": "2026 1Q",
+            "revenue": null,
+            "op": 32311000000,
+            "net": 26589000000,
+            "revenueYoY": null,
+            "opYoY": 19.2,
+            "netYoY": 37.9
+          },
+          {
+            "label": "2025 4Q",
+            "revenue": null,
+            "op": 4047000000,
+            "net": 5504000000,
+            "revenueYoY": null,
+            "opYoY": -46.4,
+            "netYoY": 1509.4
+          },
+          {
+            "label": "2025 3Q",
+            "revenue": null,
+            "op": 14076000000,
+            "net": 12219000000,
+            "revenueYoY": null,
+            "opYoY": -3.3,
+            "netYoY": 14.7
+          },
+          {
+            "label": "2025 2Q",
+            "revenue": 27029000000,
+            "op": null,
+            "net": 20726000000,
+            "revenueYoY": -93.8,
+            "opYoY": null,
+            "netYoY": 38.5
+          },
+          {
+            "label": "2025 1Q",
+            "revenue": 425447000000,
+            "op": 27100000000,
+            "net": 19286000000,
+            "revenueYoY": -10.2,
+            "opYoY": 106.2,
+            "netYoY": 89.3
+          },
+          {
+            "label": "2024 4Q",
+            "revenue": 634139000000,
+            "op": 7551000000,
+            "net": 342000000,
+            "revenueYoY": null,
+            "opYoY": null,
+            "netYoY": null
+          }
+        ]
+      },
+      "metrics": {},
+      "earnings": [],
+      "nextEarnings": null
+    },
+    "KR:066570": {
+      "market": "KR",
+      "code": "066570",
+      "name": "LG전자",
+      "financials": {
+        "unit": "원",
+        "quarters": [
+          {
+            "label": "2026 3Q",
+            "revenue": 23824080000000,
+            "op": 781858000000,
+            "net": 708407000000,
+            "revenueYoY": 8.9,
+            "opYoY": 13.5,
+            "netYoY": 53.6
+          },
+          {
+            "label": "2026 2Q",
+            "revenue": 23826468000000,
+            "op": 1579082000000,
+            "net": 781322000000,
+            "revenueYoY": 14.9,
+            "opYoY": 147,
+            "netYoY": 28.2
+          },
+          {
+            "label": "2026 1Q",
+            "revenue": 23727227000000,
+            "op": 1673723000000,
+            "net": 1005088000000,
+            "revenueYoY": 4.3,
+            "opYoY": 32.9,
+            "netYoY": 14.8
+          },
+          {
+            "label": "2025 4Q",
+            "revenue": 23852154000000,
+            "op": -108989000000,
+            "net": -725923000000,
+            "revenueYoY": 4.8,
+            "opYoY": -180.5,
+            "netYoY": -1.7
+          },
+          {
+            "label": "2025 3Q",
+            "revenue": 21873774000000,
+            "op": 688918000000,
+            "net": 461074000000,
+            "revenueYoY": -1.4,
+            "opYoY": -8.4,
+            "netYoY": 411
+          },
+          {
+            "label": "2025 2Q",
+            "revenue": 20735142000000,
+            "op": 639404000000,
+            "net": 609643000000,
+            "revenueYoY": -4.4,
+            "opYoY": -46.5,
+            "netYoY": -3.1
+          },
+          {
+            "label": "2025 1Q",
+            "revenue": 22739812000000,
+            "op": 1259059000000,
+            "net": 875618000000,
+            "revenueYoY": 7.8,
+            "opYoY": -5.7,
+            "netYoY": 49.6
+          },
+          {
+            "label": "2024 4Q",
+            "revenue": 22761475000000,
+            "op": 135331000000,
+            "net": -713754000000,
             "revenueYoY": null,
             "opYoY": null,
             "netYoY": null
