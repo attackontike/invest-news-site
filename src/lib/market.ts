@@ -17,14 +17,16 @@ export function upcoming(days: number) {
   return events.filter((e) => e.date >= today && e.date <= until);
 }
 
+// 1 미만·10 미만 값(유로/달러 1.0842 등)은 소수점을 더 보여 줌
+const digits = (v: number) => (Math.abs(v) >= 1000 ? 1 : Math.abs(v) < 10 ? 4 : 2);
 export function fmtValue(v: number | null, unit: string) {
   if (v === null || v === undefined) return '-';
-  const s = Math.abs(v) >= 1000 ? v.toLocaleString('ko-KR', { maximumFractionDigits: 1 }) : String(Math.round(v * 100) / 100);
+  const s = v.toLocaleString('ko-KR', { maximumFractionDigits: digits(v) });
   return unit === '%' ? `${s}%` : `${s}${unit === '원' ? '원' : ` ${unit}`}`;
 }
 export function fmtChange(c: number | null, unit: string) {
-  if (c === null || c === undefined || c === 0) return '변화 없음';
-  const n = Math.round(Math.abs(c) * 100) / 100;
+  if (c === null || c === undefined || Math.abs(c) < 1e-9) return '변화 없음';
+  const n = Math.abs(c).toLocaleString('ko-KR', { maximumFractionDigits: Math.abs(c) < 1 ? 4 : 2 });
   const u = unit === '%' ? '%p' : unit === '원' ? '원' : ` ${unit}`;
-  return `${c > 0 ? '▲' : '▼'} ${n.toLocaleString('ko-KR')}${u}`;
+  return `${c > 0 ? '▲' : '▼'} ${n}${u}`;
 }
