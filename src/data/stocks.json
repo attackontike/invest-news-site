@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-17T11:44:12.149Z",
+  "updatedAt": "2026-11-17T11:50:21.822Z",
   "stocks": {
     "KR:005930": {
       "market": "KR",
@@ -286,6 +286,91 @@
         "label": "장 마감 후",
         "epsEstimate": 0.4629
       }
+    },
+    "KR:003490": {
+      "market": "KR",
+      "code": "003490",
+      "name": "대한항공",
+      "financials": {
+        "unit": "원",
+        "quarters": [
+          {
+            "label": "2026 3Q",
+            "revenue": 7319565066450,
+            "op": 349170544309,
+            "net": 1264434188545,
+            "revenueYoY": 21.4,
+            "opYoY": 121.6,
+            "netYoY": 554.6
+          },
+          {
+            "label": "2026 2Q",
+            "revenue": 7230055624254,
+            "op": -207110889990,
+            "net": -600094131193,
+            "revenueYoY": 16.4,
+            "opYoY": -156,
+            "netYoY": -207.7
+          },
+          {
+            "label": "2026 1Q",
+            "revenue": 6658062171688,
+            "op": 517384321919,
+            "net": 33677401714,
+            "revenueYoY": 2.6,
+            "opYoY": 20,
+            "netYoY": -90.4
+          },
+          {
+            "label": "2025 4Q",
+            "revenue": 6496085120365,
+            "op": 154915456739,
+            "net": 18263805898,
+            "revenueYoY": 44.3,
+            "opYoY": -66.6,
+            "netYoY": -93.9
+          },
+          {
+            "label": "2025 3Q",
+            "revenue": 6026889432501,
+            "op": 157543951103,
+            "net": -278126408012,
+            "revenueYoY": 28.9,
+            "opYoY": -76.3,
+            "netYoY": -187.8
+          },
+          {
+            "label": "2025 2Q",
+            "revenue": 6210705839436,
+            "op": 370083817468,
+            "net": 557275604992,
+            "revenueYoY": 41.1,
+            "opYoY": -16.4,
+            "netYoY": 55.2
+          },
+          {
+            "label": "2025 1Q",
+            "revenue": 6491861987200,
+            "op": 431046202741,
+            "net": 349859877409,
+            "revenueYoY": 51.3,
+            "opYoY": -19.8,
+            "netYoY": -13.9
+          },
+          {
+            "label": "2024 4Q",
+            "revenue": 4501764864977,
+            "op": 464080194303,
+            "net": 299257022272,
+            "revenueYoY": null,
+            "opYoY": null,
+            "netYoY": null
+          }
+        ]
+      },
+      "metrics": {},
+      "earnings": [],
+      "nextEarnings": null
     }
   }
 }
