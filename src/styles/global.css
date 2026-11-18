@@ -327,3 +327,33 @@ code { font-size: .875em; padding: .0625rem .3125rem; border-radius: 4px; backgr
 /* 종목 페이지: 접어 둔 기사 */
 .tl-more { margin-top: 1.5rem; }
 .tl-more > summary { cursor: pointer; color: var(--muted); font-size: .9375rem; padding: .5rem 0; }
+
+/* 첫 화면 시장 요약 */
+.mkt-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .5rem; margin: 0 0 1.75rem; }
+.mkt-cell { display: grid; gap: .125rem; padding: .625rem .75rem; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); color: var(--ink); text-decoration: none; min-width: 0; }
+.mkt-cell:hover { border-color: var(--rule-strong); }
+.mkt-name { font-size: .8125rem; color: var(--muted); }
+.mkt-val { font-size: 1.125rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mkt-chg { font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mkt-date { font-size: .75rem; color: var(--muted); }
+.mkt-cell[data-dir='up'] .mkt-chg { color: var(--rise); }
+.mkt-cell[data-dir='down'] .mkt-chg { color: var(--fall); }
+.mkt-mood[data-level='1'] .mkt-val { color: var(--fall); }
+.mkt-mood[data-level='3'] .mkt-val, .mkt-mood[data-level='4'] .mkt-val { color: var(--rise); }
+
+/* 종목 페이지 주가 */
+.stock-price { margin: .25rem 0 .5rem; font-variant-numeric: tabular-nums; }
+.stock-price strong { font-size: 1.375rem; letter-spacing: -0.02em; }
+.stock-price span { color: var(--muted); font-size: .875rem; margin-left: .375rem; }
+.stock-price[data-dir='up'] strong { color: var(--rise); }
+.stock-price[data-dir='down'] strong { color: var(--fall); }
+
+/* 날짜 목록 */
+.day-nav { display: flex; gap: .375rem; overflow-x: auto; padding: .125rem 0 .75rem; margin: 0 0 .5rem; scrollbar-width: thin; }
+.day-nav a { flex: none; display: inline-flex; align-items: baseline; gap: .375rem; padding: .375rem .75rem; border: 1px solid var(--rule); border-radius: 999px; background: var(--surface); color: var(--ink); text-decoration: none; font-size: .875rem; white-space: nowrap; }
+.day-nav a small { color: var(--muted); font-size: .75rem; }
+.day-nav a[aria-current='page'] { border-color: var(--ink); font-weight: 700; }
+
+/* 검색 (Pagefind UI) */
+.search-box { margin: 0 0 1.5rem; --pagefind-ui-scale: .9; --pagefind-ui-primary: var(--ink); --pagefind-ui-text: var(--ink); --pagefind-ui-background: var(--surface); --pagefind-ui-border: var(--rule); --pagefind-ui-tag: var(--rule); --pagefind-ui-border-width: 1px; --pagefind-ui-border-radius: 10px; --pagefind-ui-font: inherit; }
+.search-box mark { background: var(--rise-tint); color: inherit; }

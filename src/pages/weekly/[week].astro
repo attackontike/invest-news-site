@@ -12,7 +12,7 @@ const r = w.report;
 const byId = Object.fromEntries(w.sources.map((s) => [s.id, { ...s, isAI: false }]));
 const days = [...new Set(w.events.map((e) => e.date))];
 ---
-<BaseLayout title={w.title} description={`주간 리포트 ${w.range}`} section="weekly">
+<BaseLayout title={w.title} description={`주간 리포트 ${w.range}`} section="weekly" searchable>
   <p class="crumb"><a href="/weekly">주간 리포트</a></p>
   <header class="page-head report-head">
     <h1>{w.title}</h1>

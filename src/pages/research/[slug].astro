@@ -16,7 +16,7 @@ const byId = Object.fromEntries(r.sources.map((s) => [s.id, s]));
 const rep = r.report;
 const toneClass = r.tone.includes('호재') ? 'up' : r.tone.includes('악재') ? 'down' : 'flat';
 ---
-<BaseLayout title={r.title} description={`리서치: ${r.topic}`} section="research">
+<BaseLayout title={r.title} description={`리서치: ${r.topic}`} section="research" searchable>
   <p class="crumb"><a href="/research">리서치</a></p>
   <header class="page-head report-head">
     <h1>{r.title}</h1>

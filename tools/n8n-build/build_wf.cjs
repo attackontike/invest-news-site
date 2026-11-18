@@ -245,13 +245,23 @@ const cmd = wf('투자 뉴스 - Discord 명령', [
   node('리서치 실행', 'n8n-nodes-base.executeWorkflow', 1.2, [1440, 480], { source: 'database', workflowId: { __rl: true, value: '', mode: 'list' }, mode: 'once', options: { waitForSubWorkflow: false } }),
   codeNode('질문 있음?', [1200, 660], 'cmd_ask_gate.js'),
   node('질문 답변 실행', 'n8n-nodes-base.executeWorkflow', 1.2, [1440, 660], { source: 'database', workflowId: { __rl: true, value: '', mode: 'list' }, mode: 'once', options: { waitForSubWorkflow: false } }),
+  // /research-delete: 리포트 기록 → 지식베이스 조각 → 사이트 파일 순서로 지우고 결과를 알림
+  codeNode('리서치 삭제 있음?', [1200, 1020], 'cmd_rdel_gate.js'),
+  http('리포트 기록 삭제', [1440, 1020], { method: 'DELETE', url: SB("reports?report_key=eq.research:{{ encodeURIComponent($json.slug) }}"), custom: true, timeout: 30000, headers: { Prefer: 'return=representation' }, full: 'json' }),
+  http('지식베이스 조각 삭제', [1680, 1020], { method: 'DELETE', url: SB("kb_chunks?chunk_key=like.research:{{ encodeURIComponent($('리서치 삭제 있음?').first().json.slug) }}%23*&select=chunk_key"), custom: true, timeout: 30000, headers: { Prefer: 'return=representation' }, full: 'json' }),
+  http('사이트 파일 확인', [1920, 1020], { url: `=https://api.github.com/repos/{{ ${S('githubOwner')} }}/{{ ${S('githubRepo')} }}/contents/src/content/research/{{ $('리서치 삭제 있음?').first().json.slug }}.md?ref={{ ${S('githubBranch')} }}`, github: true, timeout: 30000, full: 'json' }),
+  codeNode('사이트 파일 삭제 준비', [2160, 1020], 'cmd_rdel_prep.js'),
+  http('사이트 파일 삭제', [2400, 1020], { method: 'DELETE', url: `=https://api.github.com/repos/{{ ${S('githubOwner')} }}/{{ ${S('githubRepo')} }}/contents/src/content/research/{{ $('리서치 삭제 있음?').first().json.slug }}.md`, github: true, timeout: 30000, body: '={{ JSON.stringify($json.body) }}', full: 'json' }),
+  codeNode('삭제 결과 정리', [2640, 1020], 'cmd_rdel_done.js'),
+  http('Discord 삭제 결과', [2880, 1020], { method: 'POST', url: '={{ $json.url }}', timeout: 30000, body: '={{ JSON.stringify({ content: $json.content }) }}' }),
   http('Discord 답장', [1200, 840], {
     method: 'PATCH', url: "={{ $('처리 결정').first().json.followUrl }}", timeout: 30000,
     body: "={{ JSON.stringify({ content: $('처리 결정').first().json.reply }) }}",
   }),
 ], {
   ...line('Discord 명령 받기', '설정', '명령 해석', '관심 종목·후보 조회', '처리 결정'),
-  '처리 결정': { main: [[{ node: '추가할 것 있음?', type: 'main', index: 0 }, { node: '삭제할 것 있음?', type: 'main', index: 0 }, { node: '리서치 있음?', type: 'main', index: 0 }, { node: '질문 있음?', type: 'main', index: 0 }, { node: 'Discord 답장', type: 'main', index: 0 }]] },
+  '처리 결정': { main: [[{ node: '추가할 것 있음?', type: 'main', index: 0 }, { node: '삭제할 것 있음?', type: 'main', index: 0 }, { node: '리서치 있음?', type: 'main', index: 0 }, { node: '질문 있음?', type: 'main', index: 0 }, { node: '리서치 삭제 있음?', type: 'main', index: 0 }, { node: 'Discord 답장', type: 'main', index: 0 }]] },
+  ...line('리서치 삭제 있음?', '리포트 기록 삭제', '지식베이스 조각 삭제', '사이트 파일 확인', '사이트 파일 삭제 준비', '사이트 파일 삭제', '삭제 결과 정리', 'Discord 삭제 결과'),
   ...line('리서치 있음?', '리서치 실행'),
   ...line('질문 있음?', '질문 답변 실행'),
   ...line('추가할 것 있음?', '관심 종목 추가'),
@@ -414,7 +424,7 @@ const preview = wf('투자 뉴스 - 일정 예고', [
 ], line(...PV));
 
 // ========== 종목 데이터 (4-B) ==========
-const ST = ['매일 06:50', '설정', '관심 종목 조회', 'DART 재무 요청 만들기', 'DART 재무 조회', 'Finnhub 요청 만들기', 'Finnhub 조회', '기존 종목 데이터 조회', '종목 데이터 정리', '종목 데이터 저장', '실적 일정 저장', 'GitHub 기존 파일 확인', 'GitHub 커밋', '지식베이스 준비', '임베딩', '지식베이스 저장 준비', '지식베이스 저장'];
+const ST = ['매일 06:50', '설정', '관심 종목 조회', 'DART 재무 요청 만들기', 'DART 재무 조회', 'Finnhub 요청 만들기', 'Finnhub 조회', 'KRX 시세 요청 만들기', 'KRX 시세 조회', '기존 종목 데이터 조회', '종목 데이터 정리', '종목 데이터 저장', '실적 일정 저장', 'GitHub 기존 파일 확인', 'GitHub 커밋', '지식베이스 준비', '임베딩', '지식베이스 저장 준비', '지식베이스 저장'];
 const PS = (n) => [ST.indexOf(n) * 240, 300];
 const SF = "$('종목 데이터 정리').first().json";
 const ghStocks = `=https://api.github.com/repos/{{ ${S('githubOwner')} }}/{{ ${S('githubRepo')} }}/contents/src/data/stocks.json`;
@@ -426,6 +436,8 @@ const stocks = wf('투자 뉴스 - 종목 데이터', [
   http('DART 재무 조회', PS('DART 재무 조회'), { url: '={{ $json.url }}', queryAuth: true, batch: [5, 300], timeout: 30000, full: 'json' }, { onError: 'continueRegularOutput' }),
   codeNode('Finnhub 요청 만들기', PS('Finnhub 요청 만들기'), 's_finnhub_requests.js'),
   http('Finnhub 조회', PS('Finnhub 조회'), { url: '={{ $json.url }}', queryAuth: true, batch: [3, 1500], timeout: 30000, full: 'json' }, { onError: 'continueRegularOutput' }),
+  codeNode('KRX 시세 요청 만들기', PS('KRX 시세 요청 만들기'), 's_krx_requests.js'),
+  http('KRX 시세 조회', PS('KRX 시세 조회'), { url: '={{ $json.url }}', batch: [5, 500], timeout: 30000, full: 'json' }, { onError: 'continueRegularOutput' }),
   http('기존 종목 데이터 조회', PS('기존 종목 데이터 조회'), { url: SB('stock_data?select=*'), custom: true, timeout: 30000 }, { executeOnce: true, alwaysOutputData: true }),
   codeNode('종목 데이터 정리', PS('종목 데이터 정리'), 's_build.js'),
   http('종목 데이터 저장', PS('종목 데이터 저장'), {

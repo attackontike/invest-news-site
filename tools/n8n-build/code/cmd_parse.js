@@ -14,6 +14,9 @@ const q = String(opt('symbol') || '').trim();
 const top = (n) => ((b.options || []).find((o) => o.name === n) || {}).value;
 const question = b.command === 'ask' ? String(top('question') || '').trim() : '';
 const days = b.command === 'ask' ? Number(top('days')) || null : null;
+// /research-delete target: 리서치 주소(…/research/<slug>) 또는 slug
+const target = b.command === 'research-delete' ? String(top('target') || '').trim() : '';
+const slug = target.replace(/^.*\/research\//, '').replace(/[/?#].*$/, '').trim();
 const topic = b.command === 'research' ? String(((b.options || []).find((o) => o.name === 'topic') || {}).value || '').trim() : '';
 return [{
   json: {
@@ -23,6 +26,7 @@ return [{
     label: String(opt('label') || '').trim(),
     key: nameKey(q),
     topic,
+    slug,
     question,
     days,
     appId: b.applicationId,

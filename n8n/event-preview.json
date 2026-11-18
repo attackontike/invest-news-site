@@ -12,7 +12,7 @@
           ]
         }
       },
-      "id": "00000099-0000-4000-8000-1a2b3c4d5e6f",
+      "id": "000000a1-0000-4000-8000-1a2b3c4d5e6f",
       "name": "매일 20:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -25,7 +25,7 @@
       "parameters": {
         "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nconst cfg = {\n  supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n  discordWebhookUrl: '', // 예고를 받을 채널 웹훅 (#브리핑 또는 #공시알림)\n  siteUrl: 'https://invest-news-site.vercel.app',\n  minImportance: 2, // 이 중요도 이상만 예고 (1~3)\n};\nconst t = new Date(Date.now() + 9 * 3600_000 + 86400_000);\nconst tomorrow = t.toISOString().slice(0, 10);\nconst label = new Intl.DateTimeFormat('ko-KR', { timeZone: 'UTC', month: 'long', day: 'numeric', weekday: 'short' }).format(t);\nreturn [{ json: { ...cfg, tomorrow, label } }];\n"
       },
-      "id": "0000009a-0000-4000-8000-1a2b3c4d5e6f",
+      "id": "000000a2-0000-4000-8000-1a2b3c4d5e6f",
       "name": "설정",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -44,7 +44,7 @@
           "timeout": 30000
         }
       },
-      "id": "0000009b-0000-4000-8000-1a2b3c4d5e6f",
+      "id": "000000a3-0000-4000-8000-1a2b3c4d5e6f",
       "name": "내일 일정 조회",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -58,7 +58,7 @@
       "parameters": {
         "jsCode": "// 내일 일정 예고 메시지. 일정이 없거나 웹훅이 비어 있으면 보내지 않습니다.\nconst c = $('설정').first().json;\nif (!c.discordWebhookUrl) return [];\nconst rows = $input.all().map((i) => i.json).filter((r) => r && r.name && (r.importance || 1) >= c.minImportance);\nif (!rows.length) return [];\nrows.sort((a, b) => (a.event_time || '99').localeCompare(b.event_time || '99'));\nconst flag = (m) => (m === 'US' ? '🇺🇸' : '🇰🇷');\nconst lines = rows.map((r) => `• ${r.event_time || '시간 미정'} ${flag(r.market)} ${r.name} ${'★'.repeat(r.importance || 1)}`);\nconst late = rows.some((r) => r.market === 'US');\nreturn [{\n  json: {\n    username: '투자 뉴스 브리프 · 일정',\n    content: [`📅 **내일, ${c.label} 주요 경제 일정**`, ...lines, late ? '_시각은 한국 시간. 미국 지표는 밤이나 다음 날 새벽에 나옵니다._' : '', `전체 일정: ${c.siteUrl}/data`].filter(Boolean).join('\\n'),\n  },\n}];\n"
       },
-      "id": "0000009c-0000-4000-8000-1a2b3c4d5e6f",
+      "id": "000000a4-0000-4000-8000-1a2b3c4d5e6f",
       "name": "예고 만들기",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -78,7 +78,7 @@
           "timeout": 30000
         }
       },
-      "id": "0000009d-0000-4000-8000-1a2b3c4d5e6f",
+      "id": "000000a5-0000-4000-8000-1a2b3c4d5e6f",
       "name": "Discord 예고",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,

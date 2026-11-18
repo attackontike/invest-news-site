@@ -29,6 +29,14 @@ for (const it of $('리포트 결과 합치기').all()) {
 if (!rep) {
   return [{ json: { ok: false, discord: { content: `⚠️ "${c.topic}" 리서치를 완성하지 못했습니다. Gemini 리포트 작성이 실패했어요. 잠시 뒤 다시 시도해 주세요.` } } }];
 }
+// ---------- 자료 부족이면 게시하지 않음 ----------
+const total = P.counts.filings + P.counts.news + P.counts.context;
+const minSources = c.minSources ?? 3;
+if (rep.insufficient === true || !rep.summary.length || total < minSources) {
+  const why = rep.insufficient === true && rep.reason ? clean(rep.reason) : `주제와 관련된 자료가 ${total}건뿐입니다`;
+  return [{ json: { ok: false, insufficient: true, discord: { content: `🔎 "${c.topic}" 리서치는 자료가 부족해 게시하지 않았습니다. ${why}.
+(찾은 자료: 공시 ${P.counts.filings} · 뉴스 ${P.counts.news} · 과거 기록 ${P.counts.context}) 종목명이나 더 구체적인 주제로 다시 요청해 보세요.` } } }];
+}
 const TONES = ['호재 우세', '악재 우세', '혼재', '중립'];
 const report = {
   summary: (rep.summary || []).map(clean).filter(Boolean).slice(0, 6),

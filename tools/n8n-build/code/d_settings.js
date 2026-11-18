@@ -28,6 +28,9 @@ const cfg = {
     { id: 'T10Y2Y', name: '장단기 금리차 (10년-2년)', unit: '%', transform: 'level', limit: 80, group: 'sentiment' },
     { id: 'DTWEXBGS', name: '달러인덱스 (광의)', unit: 'pt', transform: 'level', limit: 80, group: 'sentiment' },
     { id: 'STLFSI4', name: '금융 스트레스 지수 (주간)', unit: 'pt', transform: 'level', limit: 30, group: 'sentiment' },
+    // group: 'index' → 첫 화면 시장 요약에 표시 (주가 지수, 전 거래일 종가)
+    { id: 'SP500', name: 'S&P 500 지수', unit: 'pt', transform: 'level', limit: 80, group: 'index' },
+    { id: 'NASDAQCOM', name: '나스닥 종합지수', unit: 'pt', transform: 'level', limit: 80, group: 'index' },
   ],
   // 한국 지표 (ECOS). stat 통계표 코드, cycle D(일)·M(월), item 항목 코드
   ecos: [
@@ -38,6 +41,8 @@ const cfg = {
     { stat: '731Y001', cycle: 'D', item: '0000002', name: '원/엔 환율 (100엔)', unit: '원', transform: 'level', days: 90 },
     { stat: '731Y001', cycle: 'D', item: '0000003', name: '원/유로 환율', unit: '원', transform: 'level', days: 90 },
     { stat: '731Y001', cycle: 'D', item: '0000053', name: '원/위안 환율', unit: '원', transform: 'level', days: 90 },
+    { stat: '802Y001', cycle: 'D', item: '0001000', name: '코스피 지수', unit: 'pt', transform: 'level', days: 90, group: 'index' },
+    { stat: '802Y001', cycle: 'D', item: '0089000', name: '코스닥 지수', unit: 'pt', transform: 'level', days: 90, group: 'index' },
   ],
 
   // FRED 발표 일정 중 챙길 것: [이름에 들어 있는 말, 한국어 이름, 중요도 1~3, 미국 동부 시각]

@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHead from '../../components/PageHead.astro';
+import Empty from '../../components/Empty.astro';
+import DayView from '../../components/DayView.astro';
+import DayNav from '../../components/DayNav.astro';
+import { loadNews } from '../../lib/news';
+import { fmtDay } from '../../lib/format';
+
+const { byDay, dayKeys, ref } = await loadNews();
+const latest = dayKeys[0];
+const d = latest ? byDay.get(latest)! : null;
+const nav = dayKeys.map((k) => ({ day: k, count: byDay.get(k)!.news.length + byDay.get(k)!.filings.length }));
+---
+<BaseLayout title="시장 뉴스" description="날짜별 국내·미국 시장 뉴스와 공시" section="news">
+  <PageHead
+    title="시장 뉴스"
+    lead="신뢰도 기준을 통과한 기사와 공시를 날짜별로, 하루 안에서는 중요도순으로 보여 줍니다. 아래 날짜를 누르면 지난 날짜도 볼 수 있습니다."
+  />
+  {!d ? <Empty /> : (
+    <>
+      <DayNav days={nav} current={latest} ref={ref} />
+      <DayView day={latest} label={fmtDay(latest, ref)} filings={d.filings} news={d.news} />
+    </>
+  )}
+</BaseLayout>

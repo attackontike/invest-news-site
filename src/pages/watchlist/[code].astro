@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NewsRow from '../../components/NewsRow.astro';
 import { loadNews, kstDate, isSolid } from '../../lib/news';
-import { stocks, stockOf, won, pct, num, usdCap, displayName, codeLabel } from '../../lib/stocks';
+import { stocks, stockOf, won, pct, num, usdCap, displayName, codeLabel, priceText, priceDir } from '../../lib/stocks';
 import { fmtDay, fmtDateTime } from '../../lib/format';
 
 export async function getStaticPaths() {
@@ -27,12 +27,15 @@ const watched = watchSet.has(`${w.market}:${w.code}`);
 const qs = s?.financials.quarters ?? [];
 const dn = displayName(w);
 const cl = codeLabel(w);
+const pr = s?.price ?? null;
+const prNote = pr ? `${(pr.date ?? '').slice(5).replace('-', '.')} 종가${pr.change !== null && pr.change !== undefined ? ` · 전일 대비 ${pr.change > 0 ? '+' : ''}${pr.change.toLocaleString(pr.currency === 'KRW' ? 'ko-KR' : 'en-US')}${pr.currency === 'KRW' ? '원' : '달러'}` : ''}` : '';
 const yoyClass = (v: number | null) => (v === null ? '' : v > 0 ? 'up' : v < 0 ? 'down' : '');
 ---
 <BaseLayout title={cl ? `${dn} (${cl})` : dn} description={`${dn} 종목 페이지`} section="watchlist">
   <p class="crumb"><a href="/watchlist">관심 종목</a></p>
   <header class="page-head stock-head">
     <h1>{dn} {cl && <span class="stock-code">{cl}</span>}</h1>
+    {pr && <p class="stock-price" data-dir={priceDir(pr)}><strong>{priceText(pr)}</strong> <span>{prNote}</span></p>}
     <p class="lead">{w.market === 'KR' ? '국내' : '미국'} 상장{watched ? ' · ★ 관심 종목' : ''}{s?.nextEarnings && <> · 다음 실적 발표 <strong>{fmtDay(s.nextEarnings.date)} {s.nextEarnings.time ?? ''}</strong> (한국 시간{s.nextEarnings.label ? `, 미국 ${s.nextEarnings.label}` : ''})</>}</p>
   </header>
 

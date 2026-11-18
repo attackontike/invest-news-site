@@ -20,6 +20,7 @@ let insert = null;
 let del = null;
 let research = null;
 let ask = null;
+let rdel = null;
 
 if (p.command === 'ask') {
   if (!p.question) {
@@ -34,6 +35,13 @@ if (p.command === 'ask') {
   } else {
     research = { topic: p.topic.slice(0, 100), appId: p.appId, token: p.token };
     reply = `🔎 리서치를 시작합니다: **${research.topic}**\n공시·뉴스·과거 기록을 모으고 Gemini 리포트와 다른 AI의 투자 관점 Q&A를 만드는 데 1~3분 걸립니다. 끝나면 이 채널에 결과를 보내 드릴게요.`;
+  }
+} else if (p.command === 'research-delete') {
+  if (!/^[0-9A-Za-z][0-9A-Za-z_-]{2,80}$/.test(p.slug || '')) {
+    reply = '지울 리서치의 주소를 넣어 주세요. 예: /research-delete target:https://…/research/2026-11-17-1407-report';
+  } else {
+    rdel = { slug: p.slug, appId: p.appId, token: p.token };
+    reply = `🗑️ 리서치 **${p.slug}** 를 지우는 중입니다. 사이트 파일, 리포트 기록, 지식베이스 조각을 함께 지웁니다.`;
   }
 } else if (p.command !== 'watch') {
   reply = `/${p.command} 명령은 아직 준비 중입니다.`;
@@ -66,4 +74,4 @@ if (p.command === 'ask') {
   reply = '알 수 없는 명령입니다.';
 }
 
-return [{ json: { reply: reply.slice(0, 1900), insert, del, research, ask, followUrl: p.followUrl } }];
+return [{ json: { reply: reply.slice(0, 1900), insert, del, research, ask, rdel, followUrl: p.followUrl } }];

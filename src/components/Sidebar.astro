@@ -4,7 +4,7 @@ import { fmtDateTime } from '../lib/format';
 
 import { getCollection } from 'astro:content';
 import { upcoming } from '../lib/market';
-interface Props { current: 'brief' | 'news' | 'filings' | 'watchlist' | 'research' | 'data' | 'weekly' }
+interface Props { current: 'brief' | 'news' | 'filings' | 'watchlist' | 'research' | 'data' | 'weekly' | 'search' }
 const { current } = Astro.props;
 const { generatedAt, news, filings, watchlist } = await loadNews();
 const discord = import.meta.env.PUBLIC_DISCORD_INVITE;
@@ -19,6 +19,7 @@ const live = [
   { id: 'weekly', href: '/weekly', label: '주간 리포트', desc: weeklies.length ? `최근 ${weeklies[0].data.week.replace('-W', '년 ')}주차` : '매주 일요일 08:00' },
   { id: 'research', href: '/research', label: '리서치', desc: reports ? `리포트 ${reports}개` : 'Discord /research로 요청' },
   { id: 'data', href: '/data', label: '데이터·일정', desc: `2주 일정 ${upcoming(14).length}건` },
+  { id: 'search', href: '/search', label: '검색', desc: '지난 기사·공시·리서치 찾기' },
 ];
 const soon: { label: string; when: string }[] = [];
 ---

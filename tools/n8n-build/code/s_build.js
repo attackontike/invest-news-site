@@ -77,6 +77,26 @@ for (const [req, it] of pairUp(fReq, $('Finnhub 조회').all())) {
   if (j.error || !j.statusCode || j.statusCode >= 400) { report.push(`Finnhub ${req.watch.code} ${req.kind}: 실패 ${j.statusCode || ''} ${JSON.stringify(j.body || '').slice(0, 80)}`); continue; }
   ((fin[req.watch.code] = fin[req.watch.code] || {})[req.kind] = j.body);
 }
+// ---------- 주가 (국내: 금융위원회 주식시세, 미국: Finnhub quote) ----------
+const r2 = (v) => (Number.isFinite(v) ? Math.round(v * 100) / 100 : null);
+const krx = {};
+const kReq = $('KRX 시세 요청 만들기').all().map((i) => i.json);
+for (const [req, it] of pairUp(kReq, $('KRX 시세 조회').all())) {
+  if (req.skip || !req.watch) continue;
+  const j = it.json || {};
+  let b = j.body;
+  if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = null; } }
+  const items = ((((b || {}).response || {}).body || {}).items || {}).item;
+  const arr = (Array.isArray(items) ? items : items ? [items] : []).filter((x) => String(x.srtnCd || '').replace(/^A/, '') === req.watch.code);
+  arr.sort((a, z) => String(z.basDt).localeCompare(String(a.basDt)));
+  if (!arr.length) { report.push(`국내 주가 ${req.watch.code}: 없음 ${j.statusCode || ''} ${typeof j.body === 'string' ? j.body.slice(0, 80) : ''}`.trim()); continue; }
+  const x = arr[0], d = String(x.basDt);
+  krx[req.watch.code] = { value: Number(x.clpr), change: Number(x.vs), pct: r2(Number(x.fltRt)), date: `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, currency: 'KRW', marketCap: Number(x.mrktTotAmt) || null };
+}
+const usPrice = (q) => (q && Number.isFinite(q.c) && q.c > 0
+  ? { value: r2(q.c), change: r2(q.d), pct: r2(q.dp), date: q.t ? new Date(q.t * 1000 - 5 * 3600_000).toISOString().slice(0, 10) : null, currency: 'USD' }
+  : null);
+
 const pick = (m, keys) => { for (const k of keys) if (m && Number.isFinite(m[k])) return m[k]; return null; };
 
 // ---------- 종목별 정리 ----------
@@ -92,8 +112,9 @@ for (const w of watch) {
   if (w.market === 'KR') {
     if (!w.corp_code) { report.push(`${name}: DART 고유번호 없음 (종목 사전 확인)`); continue; }
     const qs = dart[w.code] ? quarters(dart[w.code]) : [];
-    if (!qs.length) { report.push(`${name}: 재무 데이터 없음`); if (existing[id]) site[id] = existing[id]; continue; }
+    if (!qs.length) { report.push(`${name}: 재무 데이터 없음`); if (existing[id]) site[id] = krx[w.code] ? { ...existing[id], metrics: { ...(existing[id].metrics || {}), price: krx[w.code] } } : existing[id]; continue; }
     row.financials = { unit: '원', quarters: qs };
+    if (krx[w.code]) row.metrics = { price: krx[w.code] };
     row.latest_label = qs[0].label;
     if (!existing[id] || existing[id].latest_label !== row.latest_label) {
       const l = qs[0];
@@ -110,6 +131,7 @@ for (const w of watch) {
     if (companyName && name === w.code) name = companyName;
     row.metrics = {
       companyName,
+      price: usPrice(f.quote),
       pe: pick(m, ['peTTM', 'peBasicExclExtraTTM', 'peExclExtraTTM']),
       eps: pick(m, ['epsTTM', 'epsBasicExclExtraItemsTTM', 'epsInclExtraItemsTTM']),
       revenueGrowthQ: pick(m, ['revenueGrowthQuarterlyYoy']),
@@ -140,7 +162,7 @@ for (const w of watch) {
 
 const siteJson = {
   updatedAt: c.nowIso,
-  stocks: Object.fromEntries(Object.entries(site).map(([k, r]) => [k, { market: r.market, code: r.code, name: r.name, companyName: (r.metrics || {}).companyName || null, financials: r.financials || {}, metrics: r.metrics || {}, earnings: r.earnings || [], nextEarnings: r.next_earnings || null }])),
+  stocks: Object.fromEntries(Object.entries(site).map(([k, r]) => [k, { market: r.market, code: r.code, name: r.name, companyName: (r.metrics || {}).companyName || null, price: (r.metrics || {}).price || null, financials: r.financials || {}, metrics: r.metrics || {}, earnings: r.earnings || [], nextEarnings: r.next_earnings || null }])),
 };
 function b64(str) {
   const by = [];

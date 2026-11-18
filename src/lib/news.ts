@@ -105,7 +105,19 @@ async function build() {
   const timelineOf = (market: string, code: string) =>
     [...all].filter((it) => it.tickers.some((t) => t.code === code && t.market === market)).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 
-  return { ref, generatedAt: days[0]?.data.generatedAt ?? null, news, filings, top, topFilings, editions, watchlist, watchSet, watchGroups, timelineOf };
+  // 날짜별 보관 페이지용: 기간 제한 없이 (KST 날짜 → 공시·기사)
+  const byDay = new Map<string, { filings: Item[]; news: Item[] }>();
+  for (const it of all) {
+    const isFiling = it.tier === 'T1';
+    if (!isFiling && it.credibility < RULES.minCredibility) continue;
+    const k = kstDate(it.publishedAt);
+    if (!byDay.has(k)) byDay.set(k, { filings: [], news: [] });
+    byDay.get(k)![isFiling ? 'filings' : 'news'].push(it);
+  }
+  for (const v of byDay.values()) { v.filings.sort(byImp); v.news.sort(byImp); }
+  const dayKeys = [...byDay.keys()].sort().reverse();
+
+  return { ref, generatedAt: days[0]?.data.generatedAt ?? null, news, filings, top, topFilings, editions, watchlist, watchSet, watchGroups, timelineOf, byDay, dayKeys };
 }
 
 export async function loadNews() {

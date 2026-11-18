@@ -21,7 +21,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nreturn [{ json: { supabaseUrl: 'https://YOUR-PROJECT.supabase.co' } }];\n"
+        "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nreturn [{ json: {\n  supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n  // /research-delete 가 사이트의 리서치 파일을 지울 때 씀\n  githubOwner: 'YOUR-GITHUB-ID',\n  githubRepo: 'invest-news-site',\n  githubBranch: 'main',\n} }];\n"
       },
       "id": "00000046-0000-4000-8000-1a2b3c4d5e6f",
       "name": "설정",
@@ -34,7 +34,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// 중계 함수가 보낸 Discord 명령을 읽습니다.\nconst b = $('Discord 명령 받기').first().json.body || {};\nconst sub = (b.options || [])[0] || {};\nconst opt = (n) => ((sub.options || []).find((o) => o.name === n) || {}).value;\nconst q = String(opt('symbol') || '').trim();\nconst top = (n) => ((b.options || []).find((o) => o.name === n) || {}).value;\nconst question = b.command === 'ask' ? String(top('question') || '').trim() : '';\nconst days = b.command === 'ask' ? Number(top('days')) || null : null;\nconst topic = b.command === 'research' ? String(((b.options || []).find((o) => o.name === 'topic') || {}).value || '').trim() : '';\nreturn [{\n  json: {\n    command: b.command,\n    sub: sub.name || '',\n    q,\n    label: String(opt('label') || '').trim(),\n    key: nameKey(q),\n    topic,\n    question,\n    days,\n    appId: b.applicationId,\n    token: b.token,\n    followUrl: `https://discord.com/api/v10/webhooks/${b.applicationId}/${b.token}/messages/@original`,\n  },\n}];\n"
+        "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// 중계 함수가 보낸 Discord 명령을 읽습니다.\nconst b = $('Discord 명령 받기').first().json.body || {};\nconst sub = (b.options || [])[0] || {};\nconst opt = (n) => ((sub.options || []).find((o) => o.name === n) || {}).value;\nconst q = String(opt('symbol') || '').trim();\nconst top = (n) => ((b.options || []).find((o) => o.name === n) || {}).value;\nconst question = b.command === 'ask' ? String(top('question') || '').trim() : '';\nconst days = b.command === 'ask' ? Number(top('days')) || null : null;\n// /research-delete target: 리서치 주소(…/research/<slug>) 또는 slug\nconst target = b.command === 'research-delete' ? String(top('target') || '').trim() : '';\nconst slug = target.replace(/^.*\\/research\\//, '').replace(/[/?#].*$/, '').trim();\nconst topic = b.command === 'research' ? String(((b.options || []).find((o) => o.name === 'topic') || {}).value || '').trim() : '';\nreturn [{\n  json: {\n    command: b.command,\n    sub: sub.name || '',\n    q,\n    label: String(opt('label') || '').trim(),\n    key: nameKey(q),\n    topic,\n    slug,\n    question,\n    days,\n    appId: b.applicationId,\n    token: b.token,\n    followUrl: `https://discord.com/api/v10/webhooks/${b.applicationId}/${b.token}/messages/@original`,\n  },\n}];\n"
       },
       "id": "00000047-0000-4000-8000-1a2b3c4d5e6f",
       "name": "명령 해석",
@@ -69,7 +69,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// 명령에 맞게 할 일(추가·삭제)과 Discord 답장을 정합니다.\nconst p = $('명령 해석').first().json;\nconst ctx = $input.first().json || {};\nconst list = Array.isArray(ctx.watchlist) ? ctx.watchlist : [];\nconst cands = Array.isArray(ctx.candidates) ? ctx.candidates : [];\nconst mk = (m) => (m === 'KR' ? '국내' : '미국');\nconst fmt = (w) => `${w.name} (${w.code}, ${mk(w.market)})`;\nconst listText = () => (list.length ? list.map((w) => `• ${fmt(w)}`).join('\\n') : '(비어 있음)');\n\nlet reply = '';\nlet insert = null;\nlet del = null;\nlet research = null;\nlet ask = null;\n\nif (p.command === 'ask') {\n  if (!p.question) {\n    reply = '질문을 입력해 주세요. 예: /ask question:최근 삼성전자 공시 흐름은?';\n  } else {\n    ask = { question: p.question.slice(0, 200), days: p.days, appId: p.appId, token: p.token };\n    reply = `🔍 지식베이스에서 찾는 중: **${ask.question}**${p.days ? ` (최근 ${p.days}일)` : ''}`;\n  }\n} else if (p.command === 'research') {\n  if (!p.topic) {\n    reply = '조사할 주제를 입력해 주세요. 예: /research topic:삼성전자 HBM';\n  } else {\n    research = { topic: p.topic.slice(0, 100), appId: p.appId, token: p.token };\n    reply = `🔎 리서치를 시작합니다: **${research.topic}**\\n공시·뉴스·과거 기록을 모으고 Gemini 리포트와 다른 AI의 투자 관점 Q&A를 만드는 데 1~3분 걸립니다. 끝나면 이 채널에 결과를 보내 드릴게요.`;\n  }\n} else if (p.command !== 'watch') {\n  reply = `/${p.command} 명령은 아직 준비 중입니다.`;\n} else if (p.sub === 'list') {\n  reply = `⭐ 관심 종목 ${list.length}개\\n${listText()}`;\n} else if (p.sub === 'add') {\n  const pick = (r) => cands.filter((x) => x.rank === r);\n  const one = pick(0).length === 1 ? pick(0)[0] : pick(1).length === 1 ? pick(1)[0] : cands.length === 1 ? cands[0] : null;\n  if (!cands.length) {\n    reply = `\"${p.q}\"에 맞는 종목을 찾지 못했습니다. 종목코드(예: 005930)나 티커(예: NVDA)로 다시 입력해 보세요. 미국 종목은 영어 이름이나 티커로 찾을 수 있습니다.\\n(종목 사전 워크플로를 한 번도 실행하지 않았다면 먼저 실행해야 합니다.)`;\n  } else if (!one) {\n    reply = `\"${p.q}\"에 맞는 종목이 여러 개입니다. 종목코드나 티커로 다시 입력해 주세요.\\n${cands.map((x) => `• ${x.name} — /watch add symbol:${x.code}`).join('\\n')}`;\n  } else if (list.some((w) => w.market === one.market && w.code === one.code)) {\n    reply = `이미 관심 종목입니다: ${fmt(list.find((w) => w.market === one.market && w.code === one.code))}`;\n  } else {\n    const name = (p.label || (one.market === 'KR' ? one.name : one.code)).slice(0, 30);\n    insert = { market: one.market, code: one.code, name };\n    reply = `✅ 관심 종목에 추가했습니다: ${fmt(insert)}${one.market === 'US' && !p.label ? `\\n(회사명: ${one.name}. 한글 이름을 쓰려면 삭제 후 label 옵션으로 다시 추가)` : ''}\\n다음 수집부터 공시와 뉴스를 챙기고, 다음 게시 회차부터 사이트에 반영됩니다. 현재 ${list.length + 1}개.`;\n  }\n} else if (p.sub === 'remove') {\n  const q = p.q.toUpperCase();\n  const hit = list.find((w) => w.code.toUpperCase() === q || w.name === p.q || nameKey(w.name) === p.key);\n  if (!hit) {\n    reply = `\"${p.q}\"는 관심 종목에 없습니다.\\n현재 목록:\\n${listText()}`;\n  } else {\n    del = { market: hit.market, code: hit.code };\n    reply = `🗑️ 관심 종목에서 삭제했습니다: ${fmt(hit)}. 남은 종목 ${list.length - 1}개.`;\n  }\n} else {\n  reply = '알 수 없는 명령입니다.';\n}\n\nreturn [{ json: { reply: reply.slice(0, 1900), insert, del, research, ask, followUrl: p.followUrl } }];\n"
+        "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// 명령에 맞게 할 일(추가·삭제)과 Discord 답장을 정합니다.\nconst p = $('명령 해석').first().json;\nconst ctx = $input.first().json || {};\nconst list = Array.isArray(ctx.watchlist) ? ctx.watchlist : [];\nconst cands = Array.isArray(ctx.candidates) ? ctx.candidates : [];\nconst mk = (m) => (m === 'KR' ? '국내' : '미국');\nconst fmt = (w) => `${w.name} (${w.code}, ${mk(w.market)})`;\nconst listText = () => (list.length ? list.map((w) => `• ${fmt(w)}`).join('\\n') : '(비어 있음)');\n\nlet reply = '';\nlet insert = null;\nlet del = null;\nlet research = null;\nlet ask = null;\nlet rdel = null;\n\nif (p.command === 'ask') {\n  if (!p.question) {\n    reply = '질문을 입력해 주세요. 예: /ask question:최근 삼성전자 공시 흐름은?';\n  } else {\n    ask = { question: p.question.slice(0, 200), days: p.days, appId: p.appId, token: p.token };\n    reply = `🔍 지식베이스에서 찾는 중: **${ask.question}**${p.days ? ` (최근 ${p.days}일)` : ''}`;\n  }\n} else if (p.command === 'research') {\n  if (!p.topic) {\n    reply = '조사할 주제를 입력해 주세요. 예: /research topic:삼성전자 HBM';\n  } else {\n    research = { topic: p.topic.slice(0, 100), appId: p.appId, token: p.token };\n    reply = `🔎 리서치를 시작합니다: **${research.topic}**\\n공시·뉴스·과거 기록을 모으고 Gemini 리포트와 다른 AI의 투자 관점 Q&A를 만드는 데 1~3분 걸립니다. 끝나면 이 채널에 결과를 보내 드릴게요.`;\n  }\n} else if (p.command === 'research-delete') {\n  if (!/^[0-9A-Za-z][0-9A-Za-z_-]{2,80}$/.test(p.slug || '')) {\n    reply = '지울 리서치의 주소를 넣어 주세요. 예: /research-delete target:https://…/research/2026-11-17-1407-report';\n  } else {\n    rdel = { slug: p.slug, appId: p.appId, token: p.token };\n    reply = `🗑️ 리서치 **${p.slug}** 를 지우는 중입니다. 사이트 파일, 리포트 기록, 지식베이스 조각을 함께 지웁니다.`;\n  }\n} else if (p.command !== 'watch') {\n  reply = `/${p.command} 명령은 아직 준비 중입니다.`;\n} else if (p.sub === 'list') {\n  reply = `⭐ 관심 종목 ${list.length}개\\n${listText()}`;\n} else if (p.sub === 'add') {\n  const pick = (r) => cands.filter((x) => x.rank === r);\n  const one = pick(0).length === 1 ? pick(0)[0] : pick(1).length === 1 ? pick(1)[0] : cands.length === 1 ? cands[0] : null;\n  if (!cands.length) {\n    reply = `\"${p.q}\"에 맞는 종목을 찾지 못했습니다. 종목코드(예: 005930)나 티커(예: NVDA)로 다시 입력해 보세요. 미국 종목은 영어 이름이나 티커로 찾을 수 있습니다.\\n(종목 사전 워크플로를 한 번도 실행하지 않았다면 먼저 실행해야 합니다.)`;\n  } else if (!one) {\n    reply = `\"${p.q}\"에 맞는 종목이 여러 개입니다. 종목코드나 티커로 다시 입력해 주세요.\\n${cands.map((x) => `• ${x.name} — /watch add symbol:${x.code}`).join('\\n')}`;\n  } else if (list.some((w) => w.market === one.market && w.code === one.code)) {\n    reply = `이미 관심 종목입니다: ${fmt(list.find((w) => w.market === one.market && w.code === one.code))}`;\n  } else {\n    const name = (p.label || (one.market === 'KR' ? one.name : one.code)).slice(0, 30);\n    insert = { market: one.market, code: one.code, name };\n    reply = `✅ 관심 종목에 추가했습니다: ${fmt(insert)}${one.market === 'US' && !p.label ? `\\n(회사명: ${one.name}. 한글 이름을 쓰려면 삭제 후 label 옵션으로 다시 추가)` : ''}\\n다음 수집부터 공시와 뉴스를 챙기고, 다음 게시 회차부터 사이트에 반영됩니다. 현재 ${list.length + 1}개.`;\n  }\n} else if (p.sub === 'remove') {\n  const q = p.q.toUpperCase();\n  const hit = list.find((w) => w.code.toUpperCase() === q || w.name === p.q || nameKey(w.name) === p.key);\n  if (!hit) {\n    reply = `\"${p.q}\"는 관심 종목에 없습니다.\\n현재 목록:\\n${listText()}`;\n  } else {\n    del = { market: hit.market, code: hit.code };\n    reply = `🗑️ 관심 종목에서 삭제했습니다: ${fmt(hit)}. 남은 종목 ${list.length - 1}개.`;\n  }\n} else {\n  reply = '알 수 없는 명령입니다.';\n}\n\nreturn [{ json: { reply: reply.slice(0, 1900), insert, del, research, ask, rdel, followUrl: p.followUrl } }];\n"
       },
       "id": "00000049-0000-4000-8000-1a2b3c4d5e6f",
       "name": "처리 결정",
@@ -228,6 +228,190 @@
     },
     {
       "parameters": {
+        "jsCode": "// /research-delete면 리서치 삭제로 넘어갑니다.\nconst { rdel } = $('처리 결정').first().json;\nreturn rdel ? [{ json: rdel }] : [];\n"
+      },
+      "id": "00000052-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "리서치 삭제 있음?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/reports?report_key=eq.research:{{ encodeURIComponent($json.slug) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "00000053-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "리포트 기록 삭제",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/kb_chunks?chunk_key=like.research:{{ encodeURIComponent($('리서치 삭제 있음?').first().json.slug) }}%23*&select=chunk_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "00000054-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "지식베이스 조각 삭제",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.githubRepo }}/contents/src/content/research/{{ $('리서치 삭제 있음?').first().json.slug }}.md?ref={{ $('설정').first().json.githubBranch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "00000055-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "사이트 파일 확인",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 사이트의 리서치 파일 sha를 꺼내 삭제 요청을 만듭니다. 파일이 없으면 sha 없이 보내고 GitHub이 거절합니다 (결과 알림에서 \"파일 없음\"으로 표시).\nconst c = $('설정').first().json;\nconst r = $('리서치 삭제 있음?').first().json;\nconst j = $input.first().json || {};\nconst sha = (j.statusCode === 200 && j.body && j.body.sha) || null;\nreturn [{ json: { body: { message: `research: delete ${r.slug}`, sha, branch: c.githubBranch } } }];\n"
+      },
+      "id": "00000056-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "사이트 파일 삭제 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.githubRepo }}/contents/src/content/research/{{ $('리서치 삭제 있음?').first().json.slug }}.md",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "00000057-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "사이트 파일 삭제",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 리서치 삭제 결과를 Discord에 새 메시지로 알립니다.\nconst r = $('리서치 삭제 있음?').first().json;\nconst count = (n) => { try { const b = $(n).first().json.body; return Array.isArray(b) ? b.length : 0; } catch (e) { return 0; } };\nconst status = (n) => { try { return $(n).first().json.statusCode; } catch (e) { return null; } };\nconst reports = count('리포트 기록 삭제');\nconst chunks = count('지식베이스 조각 삭제');\nconst fileStatus = status('사이트 파일 확인');\nlet gh;\ntry { gh = $('사이트 파일 삭제').first().json.statusCode; } catch (e) { gh = null; }\nconst file = fileStatus === 404 ? '사이트 파일 없음' : gh === 200 ? '사이트 파일 삭제 (1~2분 뒤 반영)' : `사이트 파일 삭제 실패 (${gh ?? fileStatus ?? '?'})`;\nconst content = (reports + chunks === 0 && fileStatus === 404)\n  ? `⚠️ **${r.slug}** 리서치를 찾지 못했습니다. 주소를 확인해 주세요.`\n  : `🗑️ **${r.slug}** 삭제 완료: ${file} · 리포트 기록 ${reports}건 · 지식베이스 조각 ${chunks}건\\n옵시디안 볼트의 노트는 그대로 두었습니다. 필요하면 직접 지워 주세요.`;\nreturn [{ json: { url: `https://discord.com/api/v10/webhooks/${r.appId}/${r.token}`, content } }];\n"
+      },
+      "id": "00000058-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "삭제 결과 정리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: $json.content }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "00000059-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "Discord 삭제 결과",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        1020
+      ]
+    },
+    {
+      "parameters": {
         "method": "PATCH",
         "url": "={{ $('처리 결정').first().json.followUrl }}",
         "sendBody": true,
@@ -237,7 +421,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000052-0000-4000-8000-1a2b3c4d5e6f",
+      "id": "0000005a-0000-4000-8000-1a2b3c4d5e6f",
       "name": "Discord 답장",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -316,7 +500,89 @@
             "index": 0
           },
           {
+            "node": "리서치 삭제 있음?",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Discord 답장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "리서치 삭제 있음?": {
+      "main": [
+        [
+          {
+            "node": "리포트 기록 삭제",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "리포트 기록 삭제": {
+      "main": [
+        [
+          {
+            "node": "지식베이스 조각 삭제",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지식베이스 조각 삭제": {
+      "main": [
+        [
+          {
+            "node": "사이트 파일 확인",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "사이트 파일 확인": {
+      "main": [
+        [
+          {
+            "node": "사이트 파일 삭제 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "사이트 파일 삭제 준비": {
+      "main": [
+        [
+          {
+            "node": "사이트 파일 삭제",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "사이트 파일 삭제": {
+      "main": [
+        [
+          {
+            "node": "삭제 결과 정리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "삭제 결과 정리": {
+      "main": [
+        [
+          {
+            "node": "Discord 삭제 결과",
             "type": "main",
             "index": 0
           }

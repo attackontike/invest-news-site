@@ -74,6 +74,15 @@ const commands = [
       { type: INTEGER, name: 'days', name_localizations: { ko: '기간' }, description: 'Days to look back', description_localizations: { ko: '찾아볼 기간(일). 비우면 질문에서 판단, 없으면 90일' }, required: false, min_value: 1, max_value: 365 },
     ],
   },
+  {
+    name: 'research-delete',
+    name_localizations: { ko: '리서치삭제' },
+    description: 'Delete a research report',
+    description_localizations: { ko: '잘못 만든 리서치를 사이트·기록·지식베이스에서 지웁니다' },
+    options: [
+      { type: STRING, name: 'target', name_localizations: { ko: '리서치' }, description: 'Report URL or slug', description_localizations: { ko: '리서치 주소 또는 끝부분 (예: 2026-11-17-1407-report)' }, required: true, max_length: 200 },
+    ],
+  },
 ];
 
 const res = await fetch(`https://discord.com/api/v10/applications/${app}/guilds/${guild}/commands`, {

@@ -1,0 +1,38 @@
+---
+// 하루치 공시와 기사 (시장 뉴스 첫 화면과 날짜별 페이지가 함께 씀)
+import NewsRow from './NewsRow.astro';
+import FilterScript from './FilterScript.astro';
+import type { Item } from '../lib/news';
+
+interface Props { day: string; label: string; filings: Item[]; news: Item[] }
+const { label, filings, news } = Astro.props;
+const all = [...filings, ...news];
+const count = (m: 'KR' | 'US') => all.filter((n) => (m === 'KR' ? n.market === 'KR' : n.market !== 'KR')).length;
+---
+<div class="filters" role="group" aria-label="기사 거르기" data-pagefind-ignore>
+  <div class="seg" data-filter="market">
+    <button type="button" aria-pressed="true" data-value="all">전체 {all.length}</button>
+    <button type="button" aria-pressed="false" data-value="KR">국내 {count('KR')}</button>
+    <button type="button" aria-pressed="false" data-value="US">미국·해외 {count('US')}</button>
+  </div>
+  <div class="seg" data-filter="sentiment">
+    <button type="button" aria-pressed="true" data-value="all">모든 논조</button>
+    <button type="button" aria-pressed="false" data-value="호재">호재</button>
+    <button type="button" aria-pressed="false" data-value="악재">악재</button>
+  </div>
+</div>
+
+{filings.length > 0 && (
+  <section class="day" aria-label={`${label} 공시`}>
+    <h2 class="day-h">{label} 공시·공식 발표 <span>{filings.length}건</span></h2>
+    <ol class="rows">{filings.map((it) => <NewsRow item={it} compact />)}</ol>
+  </section>
+)}
+{news.length > 0 && (
+  <section class="day" aria-label={`${label} 기사`}>
+    <h2 class="day-h">{label} 기사 <span>{news.length}건</span></h2>
+    <ol class="rows">{news.map((it) => <NewsRow item={it} />)}</ol>
+  </section>
+)}
+<p class="none" id="no-match" hidden>조건에 맞는 기사가 없습니다. 위에서 다른 조건을 골라 보세요.</p>
+<FilterScript />

@@ -1,0 +1,13 @@
+---
+// 날짜 목록 (최근 날짜가 앞)
+import { fmtDay } from '../lib/format';
+interface Props { days: { day: string; count: number }[]; current?: string; ref?: Date }
+const { days, current, ref } = Astro.props;
+---
+<nav class="day-nav" aria-label="날짜별 기사" data-pagefind-ignore>
+  {days.map((d) => (
+    <a href={`/news/${d.day}`} aria-current={d.day === current ? 'page' : undefined}>
+      {fmtDay(d.day, ref).replace(/\s*\(.*\)$/, '')}<small>{d.count}</small>
+    </a>
+  ))}
+</nav>

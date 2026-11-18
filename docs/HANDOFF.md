@@ -92,6 +92,16 @@ GitHub 계정 `attackontike`. 저장소: `invest-news-site`(공개 여부 확인
 3. Discord에서 `/research topic:…` 실행해 결과 메시지까지 확인
 4. ~~2027년 FOMC·금통위 날짜~~ ✅ 2026-11-18 T3 `manualEvents`에 17건. 금통위 4/9·10/15는 기사마다 달라(일부 4/22·10/28) 한국은행 공식 일정표로 재확인 필요
 5. 옵시디안 최종 리포트 노트에 시장 심리·백업·주간 리포트 반영 (선택)
+6. **`/research-delete` 명령 등록** (2026-11-19 n8n 쪽은 설치됨) — `.env`에 `DISCORD_APP_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`를 넣고 `node --env-file=.env scripts/register-commands.mjs`
+7. **국내 주가 (선택)** — 공공데이터포털 "금융위원회_주식시세정보" 활용 신청 → 일반 인증키(Decoding)를 n8n "종목 데이터" 설정 노드 `krxKey`에. 비어 있으면 국내 주가만 빠지고 나머지는 정상
+
+### 2026-11-19 추가된 것
+- 첫 화면 시장 요약: 코스피·코스닥(ECOS 802Y001)·S&P 500·나스닥(FRED)·원/달러·온도계. T3 설정 `group: 'index'`
+- 관심 종목 주가 (전 거래일 종가): 미국 Finnhub `quote`, 국내 `krxKey`
+- 시장 뉴스 날짜별 페이지 `/news/YYYY-MM-DD` (기간 제한 없음), `/news`는 가장 최근 날짜
+- 사이트 검색 `/search` (Pagefind, 빌드 때 색인. 날짜별 뉴스·리서치·주간 리포트만 색인)
+- 리서치: 자료가 주제와 맞지 않거나 부족하면 게시하지 않고 Discord로 알림. `/research-delete target:<주소>`로 사이트 파일·reports·kb_chunks 삭제 (볼트 노트는 그대로)
+- 게시: 공시(T1)를 기사보다 먼저 담음, Gemini 기본 모델 요청 13초 간격 (무료 등급 분당 5회)
 
 다음 후보: 이상 신호 알림(관심 종목 뉴스 급증·논조 급변·VIX 급등), 대화형 리서치 챗봇.
 

@@ -1,8 +1,10 @@
 import data from '../data/stocks.json';
 
 export type Quarter = { label: string; revenue: number | null; op: number | null; net: number | null; revenueYoY: number | null; opYoY: number | null; netYoY: number | null };
+export type Price = { value: number; change: number | null; pct: number | null; date: string | null; currency: 'KRW' | 'USD'; marketCap?: number | null };
 export type StockData = {
   market: 'KR' | 'US'; code: string; name: string; companyName?: string | null;
+  price?: Price | null;
   financials: { unit?: string; quarters?: Quarter[] };
   metrics: { pe?: number | null; eps?: number | null; revenueGrowthQ?: number | null; netMargin?: number | null; high52?: number | null; low52?: number | null; marketCap?: number | null; dividendYield?: number | null };
   earnings: { period: string; year: number; quarter: number; actual: number | null; estimate: number | null; surprisePercent: number | null }[];
@@ -36,9 +38,23 @@ export function usdCap(m: number | null | undefined) {
   return m >= 1e6 ? `${(Math.round(m / 1e5) / 10).toLocaleString('en-US')}조 달러` : `${Math.round(m / 1e3).toLocaleString('en-US')}억 달러`;
 }
 
+// 주가 (전 거래일 종가)
+export function priceText(p: Price | null | undefined) {
+  if (!p || !Number.isFinite(p.value)) return '';
+  const v = p.currency === 'KRW' ? `${p.value.toLocaleString('ko-KR')}원` : `$${p.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const c = p.pct === null || p.pct === undefined ? '' : ` ${p.pct > 0 ? '▲' : p.pct < 0 ? '▼' : ''}${Math.abs(p.pct)}%`;
+  return v + c;
+}
+export const priceDir = (p: Price | null | undefined) => (!p || !p.pct ? 'flat' : p.pct > 0 ? 'up' : 'down');
+
 // 한 줄 요약 (관심 종목 목록용)
 export function oneLine(s: StockData | undefined) {
   if (!s) return '';
+  const pr = priceText(s.price);
+  const rest = oneLineBody(s);
+  return [pr && `${pr} (${(s.price?.date ?? '').slice(5).replace('-', '.')} 종가)`, rest].filter(Boolean).join(' · ');
+}
+function oneLineBody(s: StockData) {
   if (s.market === 'KR') {
     const q = s.financials.quarters?.[0];
     return q ? `${q.label} 매출 ${won(q.revenue)}${q.revenueYoY !== null ? `(${pct(q.revenueYoY)})` : ''} · 영업이익 ${won(q.op)}${q.opYoY !== null ? `(${pct(q.opYoY)})` : ''}` : '';

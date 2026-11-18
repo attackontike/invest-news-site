@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHead from '../../components/PageHead.astro';
+import DayView from '../../components/DayView.astro';
+import DayNav from '../../components/DayNav.astro';
+import { loadNews } from '../../lib/news';
+import { fmtDay } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const { dayKeys } = await loadNews();
+  return dayKeys.map((day) => ({ params: { day } }));
+}
+const { day } = Astro.params as { day: string };
+const { byDay, dayKeys, ref } = await loadNews();
+const d = byDay.get(day)!;
+const label = fmtDay(day);
+const nav = dayKeys.map((k) => ({ day: k, count: byDay.get(k)!.news.length + byDay.get(k)!.filings.length }));
+---
+<BaseLayout title={`${label} 시장 뉴스`} description={`${label} 국내·미국 시장 뉴스와 공시`} section="news" searchable>
+  <p class="crumb"><a href="/news">시장 뉴스</a></p>
+  <PageHead title={`${label} 시장 뉴스`} lead={`이날 나온 공시 ${d.filings.length}건과 기사 ${d.news.length}건입니다.`} />
+  <DayNav days={nav} current={day} ref={ref} />
+  <DayView day={day} label={label} filings={d.filings} news={d.news} />
+</BaseLayout>

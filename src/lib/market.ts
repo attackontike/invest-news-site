@@ -62,3 +62,10 @@ export function thermometer() {
   const n = Math.round(lv.reduce((a, b) => a + b, 0) / lv.length) as 1 | 2 | 3 | 4;
   return { level: n, label: MOOD[n], vix: vix?.value ?? null, hy: hy?.value ?? null };
 }
+
+// ---------- 첫 화면 시장 요약 ----------
+// T3 설정의 키 순서대로: 코스피, 코스닥, S&P 500, 나스닥, 원/달러. 없는 지표는 건너뜀
+const STRIP_KEYS = ['KR:802Y001:0001000', 'KR:802Y001:0089000', 'US:SP500', 'US:NASDAQCOM', 'KR:731Y001:0000001'];
+const SHORT: Record<string, string> = { 'KR:802Y001:0001000': '코스피', 'KR:802Y001:0089000': '코스닥', 'US:SP500': 'S&P 500', 'US:NASDAQCOM': '나스닥', 'KR:731Y001:0000001': '원/달러' };
+export const marketStrip = STRIP_KEYS.map((k) => indicators.find((i) => i.key === k)).filter((i): i is Indicator => !!i && i.value !== null)
+  .map((i) => ({ ...i, short: SHORT[i.key] ?? i.name, pct: i.prev ? Math.round((i.value! - i.prev) / Math.abs(i.prev) * 10000) / 100 : null }));
