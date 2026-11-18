@@ -15,7 +15,7 @@ claude.ai 채팅에서 2026-11-12부터 11-18까지 구축한 내용을 정리�
 | 4-B: 관심 종목 재무·실적 일정, 종목 페이지 | ✅ 설치·운영 중 |
 | 시장 심리 지표 (VIX 등 5개, 시장 온도계) | ✅ 설치·운영 중 |
 | 백업 (매주 Supabase → `invest-backup`) | ✅ 설치·운영 중 |
-| **주간 리포트** | ⬜ **만들기만 함. 아직 설치 전** (`docs/INSTALL.md` 13장) |
+| 주간 리포트 | ✅ 설치·Active (2026-11-18, n8n API로 설치). 첫 자동 실행 2026-11-22(일) 08:00 |
 
 ## 2. 하루·한 주의 자동 실행 (한국 시간)
 
@@ -82,10 +82,15 @@ GitHub 계정 `attackontike`. 저장소: `invest-news-site`(공개 여부 확인
 
 ## 6. 남은 일 (우선순위)
 
-1. **주간 리포트 설치** — `docs/INSTALL.md` 13장. 사이트 파일 8개(이미 이 저장소에 반영됨) 커밋·push 후, n8n에 `weekly-report.json` 가져와 설정·자격 증명 → 시험 실행 → Active
-2. **실패 알림 처치 문구 최신화** — 이후 추가된 노드들의 안내가 `tools/n8n-build/code/err_alert.js`에 있음. n8n "실패 알림"의 "알림 내용 만들기" 노드 코드를 이 파일로 교체하되, 맨 위 `DISCORD_WEBHOOK_URL` 값은 기존 것을 유지
+> **n8n 자격 증명 실제 상태:** 저장소 JSON은 Custom Auth(Supabase)·Header Auth(Gemini)로 되어 있지만, 실제 n8n 워크플로는 n8n 내장 자격 증명 `Supabase account`(supabaseApi), `Google Gemini(PaLM) Api account`(googlePalmApi), `GitHub account`(githubApi)를 쓴다. 저장소 JSON을 다시 가져올 때는 노드의 Authentication을 이 내장 종류로 바꾼다.
+>
+> **n8n API:** `C:\00AI_EXP\invest-news-site\.env`에 `N8N_BASE_URL`, `N8N_API_KEY`가 있으면 Claude Code가 워크플로 조회·생성·수정을 할 수 있다 (`node --env-file=...`, 값은 출력하지 않음). 수동 실행은 API로 불가.
+
+
+1. ~~주간 리포트 설치~~ ✅ 2026-11-18. 첫 실행(11-22 08:00) 결과 확인: `src/content/weekly/2026-W47.md` 커밋, Discord, 옵시디안 `자동/주간/`
+2. ~~실패 알림 처치 문구 최신화~~ ✅ 2026-11-18 (웹훅 유지) — 이후 추가된 노드들의 안내가 `tools/n8n-build/code/err_alert.js`에 있음. n8n "실패 알림"의 "알림 내용 만들기" 노드 코드를 이 파일로 교체하되, 맨 위 `DISCORD_WEBHOOK_URL` 값은 기존 것을 유지
 3. Discord에서 `/research topic:…` 실행해 결과 메시지까지 확인
-4. 2027년 FOMC·금통위 날짜를 T3 설정 `manualEvents`에 (형식은 `docs/INSTALL.md` 9장)
+4. ~~2027년 FOMC·금통위 날짜~~ ✅ 2026-11-18 T3 `manualEvents`에 17건. 금통위 4/9·10/15는 기사마다 달라(일부 4/22·10/28) 한국은행 공식 일정표로 재확인 필요
 5. 옵시디안 최종 리포트 노트에 시장 심리·백업·주간 리포트 반영 (선택)
 
 다음 후보: 이상 신호 알림(관심 종목 뉴스 급증·논조 급변·VIX 급등), 대화형 리서치 챗봇.
