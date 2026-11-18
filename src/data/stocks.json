@@ -1,10 +1,12 @@
 {
-  "updatedAt": "2026-11-17T21:50:01.860Z",
+  "updatedAt": "2026-11-18T21:50:01.872Z",
   "stocks": {
     "KR:005930": {
       "market": "KR",
       "code": "005930",
       "name": "삼성전자",
+      "companyName": null,
+      "price": null,
       "financials": {
         "unit": "원",
         "quarters": [
@@ -90,6 +92,8 @@
       "market": "KR",
       "code": "000660",
       "name": "SK하이닉스",
+      "companyName": null,
+      "price": null,
       "financials": {
         "unit": "원",
         "quarters": [
@@ -175,18 +179,42 @@
       "market": "US",
       "code": "NVDA",
       "name": "NVDA",
+      "companyName": "NVIDIA Corporation",
+      "price": {
+        "value": 150.96,
+        "change": -4.5,
+        "pct": -2.89,
+        "date": "2026-11-18",
+        "currency": "USD"
+      },
       "financials": {},
       "metrics": {
-        "pe": 19.5095,
-        "eps": 7.9108,
-        "revenueGrowthQ": 105.85,
-        "netMargin": 63.66,
+        "companyName": "NVIDIA Corporation",
+        "price": {
+          "value": 150.96,
+          "change": -4.5,
+          "pct": -2.89,
+          "date": "2026-11-18",
+          "currency": "USD"
+        },
+        "pe": 16.5591,
+        "eps": 9.306799999999999,
+        "revenueGrowthQ": 103.21,
+        "netMargin": 62.53,
         "high52": 243.37,
         "low52": 148.8,
-        "marketCap": 3762974,
+        "marketCap": 3746586.2,
         "dividendYield": 0.03349
       },
       "earnings": [
+        {
+          "period": "2026-12-31",
+          "year": 2027,
+          "quarter": 3,
+          "actual": 2.68,
+          "estimate": 2.525,
+          "surprisePercent": 6.1
+        },
         {
           "period": "2026-09-30",
           "year": 2027,
@@ -210,14 +238,6 @@
           "actual": 1.62,
           "estimate": 1.5634,
           "surprisePercent": 3.6
-        },
-        {
-          "period": "2025-12-31",
-          "year": 2026,
-          "quarter": 3,
-          "actual": 1.3,
-          "estimate": 1.2746,
-          "surprisePercent": 2
         }
       ],
       "nextEarnings": null
@@ -226,15 +246,31 @@
       "market": "US",
       "code": "TSLA",
       "name": "TSLA",
+      "companyName": "Tesla Inc",
+      "price": {
+        "value": 383.72,
+        "change": 3.61,
+        "pct": 0.95,
+        "date": "2026-11-18",
+        "currency": "USD"
+      },
       "financials": {},
       "metrics": {
-        "pe": 446.314,
+        "companyName": "Tesla Inc",
+        "price": {
+          "value": 383.72,
+          "change": 3.61,
+          "pct": 0.95,
+          "date": "2026-11-18",
+          "currency": "USD"
+        },
+        "pe": 445.8262,
         "eps": 0.9095000000000001,
         "revenueGrowthQ": -0.17,
         "netMargin": 3.11,
         "high52": 498.83,
         "low52": 297.38,
-        "marketCap": 1437131.1,
+        "marketCap": 1435560.5,
         "dividendYield": null
       },
       "earnings": [
@@ -284,6 +320,8 @@
       "market": "KR",
       "code": "003490",
       "name": "대한항공",
+      "companyName": null,
+      "price": null,
       "financials": {
         "unit": "원",
         "quarters": [
@@ -369,6 +407,8 @@
       "market": "KR",
       "code": "001500",
       "name": "현대차증권",
+      "companyName": null,
+      "price": null,
       "financials": {
         "unit": "원",
         "quarters": [
@@ -454,6 +494,8 @@
       "market": "KR",
       "code": "066570",
       "name": "LG전자",
+      "companyName": null,
+      "price": null,
       "financials": {
         "unit": "원",
         "quarters": [
