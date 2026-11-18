@@ -12,7 +12,9 @@ for (const r of fresh) {
   else usable.push(r);
 }
 usable.sort((a, b) => b.published_at.localeCompare(a.published_at));
-const pick = usable.slice(0, c.maxPerEdition);
+// 공시(T1)는 기사에 밀려 빠지지 않도록 먼저 담고, 남은 자리를 최신 기사로 채움
+const filingsFirst = usable.filter((r) => r.tier === 'T1').slice(0, c.maxFilingsPerEdition ?? 30);
+const pick = [...filingsFirst, ...usable.filter((r) => r.tier !== 'T1')].slice(0, c.maxPerEdition);
 if (!pick.length) return []; // 새 기사 없음: 이번 회차는 조용히 끝남
 
 const mk = (m) => (m === 'KR' ? '국내' : '미국·해외');

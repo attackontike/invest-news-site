@@ -89,7 +89,7 @@ const write = (name, pos, path, field) =>
 const pubNodes = [
   schedule('게시 시각', [0, 300], ['0 7,12,22 * * *', '30 16 * * *']),
   codeNode('설정', [240, 300], 'pub_settings.js'),
-  http('새 기사 조회', [480, 300], { url: SB('articles?status=eq.new&select=*&order=published_at.desc&limit=400'), custom: true, timeout: 30000 }, { alwaysOutputData: true }),
+  http('새 기사 조회', [480, 300], { url: SB('articles?status=eq.new&select=*&order=tier.asc,published_at.desc&limit=400'), custom: true, timeout: 30000 }, { alwaysOutputData: true }),
   http('오늘 게시분 조회', [720, 300], {
     url: SB(`articles?status=eq.published&digest_date=eq.{{ ${S('today')} }}&select=*&limit=1000`), custom: true, timeout: 30000,
   }, { executeOnce: true, alwaysOutputData: true }),
