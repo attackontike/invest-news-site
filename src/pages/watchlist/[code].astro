@@ -2,8 +2,8 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NewsRow from '../../components/NewsRow.astro';
-import { loadNews, kstDate } from '../../lib/news';
-import { stocks, stockOf, won, pct, num, usdCap } from '../../lib/stocks';
+import { loadNews, kstDate, isSolid } from '../../lib/news';
+import { stocks, stockOf, won, pct, num, usdCap, displayName, codeLabel } from '../../lib/stocks';
 import { fmtDay, fmtDateTime } from '../../lib/format';
 
 export async function getStaticPaths() {
@@ -16,19 +16,23 @@ export async function getStaticPaths() {
 const { w } = Astro.props;
 const { timelineOf, watchSet, ref } = await loadNews();
 const s = stockOf(w.market, w.code);
-const items = timelineOf(w.market, w.code).slice(0, 60);
+const all = timelineOf(w.market, w.code);
+const items = all.filter(isSolid).slice(0, 60);
+const rest = all.filter((it) => !isSolid(it)).slice(0, 40);
 const reports = (await getCollection('research'))
   .filter((r) => r.data.tickers.some((t) => t.code === w.code && t.market === w.market))
   .sort((a, b) => b.data.createdAt.localeCompare(a.data.createdAt));
 const months = [...new Set(items.map((it) => kstDate(it.publishedAt).slice(0, 7)))];
 const watched = watchSet.has(`${w.market}:${w.code}`);
 const qs = s?.financials.quarters ?? [];
+const dn = displayName(w);
+const cl = codeLabel(w);
 const yoyClass = (v: number | null) => (v === null ? '' : v > 0 ? 'up' : v < 0 ? 'down' : '');
 ---
-<BaseLayout title={`${w.name} (${w.code})`} description={`${w.name} 종목 페이지`} section="watchlist">
+<BaseLayout title={cl ? `${dn} (${cl})` : dn} description={`${dn} 종목 페이지`} section="watchlist">
   <p class="crumb"><a href="/watchlist">관심 종목</a></p>
   <header class="page-head stock-head">
-    <h1>{w.name} <span class="stock-code">{w.code}</span></h1>
+    <h1>{dn} {cl && <span class="stock-code">{cl}</span>}</h1>
     <p class="lead">{w.market === 'KR' ? '국내' : '미국'} 상장{watched ? ' · ★ 관심 종목' : ''}{s?.nextEarnings && <> · 다음 실적 발표 <strong>{fmtDay(s.nextEarnings.date)} {s.nextEarnings.time ?? ''}</strong> (한국 시간{s.nextEarnings.label ? `, 미국 ${s.nextEarnings.label}` : ''})</>}</p>
   </header>
 
@@ -97,11 +101,18 @@ const yoyClass = (v: number | null) => (v === null ? '' : v > 0 ? 'up' : v < 0 ?
 
   <section aria-labelledby="tl-h">
     <h2 id="tl-h" class="sec-h">타임라인 <span class="sec-note">공시·뉴스 {items.length}건</span></h2>
+    <p class="sec-note">공시와 한국어 요약이 붙은 기사입니다. 요약 없는 해외 기사와 커뮤니티 글은 맨 아래에 접어 두었습니다.</p>
     {items.length === 0 ? <p class="none">아직 기록이 없습니다.</p> : months.map((m) => (
       <section class="day">
         <h3 class="day-h">{m.replace('-', '년 ')}월 <span>{items.filter((it) => kstDate(it.publishedAt).startsWith(m)).length}건</span></h3>
         <ol class="rows">{items.filter((it) => kstDate(it.publishedAt).startsWith(m)).map((it) => <NewsRow item={it} compact />)}</ol>
       </section>
     ))}
+    {rest.length > 0 && (
+      <details class="tl-more">
+        <summary>요약 없는 기사·커뮤니티 글 {rest.length}건 더 보기</summary>
+        <ol class="rows">{rest.map((it) => <NewsRow item={it} compact />)}</ol>
+      </details>
+    )}
   </section>
 </BaseLayout>

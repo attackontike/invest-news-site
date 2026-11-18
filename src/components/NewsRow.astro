@@ -1,6 +1,7 @@
 ---
 import { loadNews, isWatched, type Item } from '../lib/news';
 import { fmtTime } from '../lib/format';
+import { displayName, codeLabel } from '../lib/stocks';
 
 interface Props { item: Item; compact?: boolean }
 const { item, compact = false } = Astro.props;
@@ -34,7 +35,7 @@ const watched = isWatched(item, watchSet);
     <p class="chips">
       {watched && <span class="watch" title="관심 종목">★ 관심</span>}
       <span class="tone" data-tone={item.sentiment}>{item.sentiment}</span>
-      {item.tickers.map((t) => <span class="ticker">{t.name}{t.code && <small>{t.code}</small>}</span>)}
+      {item.tickers.map((t) => <span class="ticker">{displayName(t)}{codeLabel(t) && <small>{codeLabel(t)}</small>}</span>)}
       {!compact && item.tags.map((t) => <span class="tag">#{t}</span>)}
       {item.coverage > 1 && <span class="cover">{item.coverage}개 매체 보도</span>}
     </p>

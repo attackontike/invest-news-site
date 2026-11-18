@@ -2,7 +2,7 @@ import data from '../data/stocks.json';
 
 export type Quarter = { label: string; revenue: number | null; op: number | null; net: number | null; revenueYoY: number | null; opYoY: number | null; netYoY: number | null };
 export type StockData = {
-  market: 'KR' | 'US'; code: string; name: string;
+  market: 'KR' | 'US'; code: string; name: string; companyName?: string | null;
   financials: { unit?: string; quarters?: Quarter[] };
   metrics: { pe?: number | null; eps?: number | null; revenueGrowthQ?: number | null; netMargin?: number | null; high52?: number | null; low52?: number | null; marketCap?: number | null; dividendYield?: number | null };
   earnings: { period: string; year: number; quarter: number; actual: number | null; estimate: number | null; surprisePercent: number | null }[];
@@ -12,6 +12,14 @@ export type StockData = {
 export const stocksUpdatedAt: string | null = (data as any).updatedAt ?? null;
 export const stocks = ((data as any).stocks ?? {}) as Record<string, StockData>;
 export const stockOf = (market: string, code: string): StockData | undefined => stocks[`${market}:${code}`];
+
+// 화면에 쓸 종목 이름. 미국 관심 종목은 이름이 티커 그대로 저장되므로, 종목 데이터의 회사 이름(Finnhub)이 있으면 그것을 씀
+export function displayName(t: { market?: string; code?: string; name: string }) {
+  if (t.code && t.name === t.code) return stockOf(t.market ?? '', t.code)?.companyName || t.name;
+  return t.name;
+}
+// 이름 뒤에 작게 붙일 코드 (이름과 같으면 생략)
+export const codeLabel = (t: { market?: string; code?: string; name: string }) => (t.code && displayName(t) !== t.code ? t.code : '');
 
 // 원 단위 → 조·억
 export function won(v: number | null | undefined) {

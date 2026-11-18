@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHead from '../components/PageHead.astro';
 import NewsRow from '../components/NewsRow.astro';
 import { loadNews, RULES } from '../lib/news';
-import { stockOf, oneLine } from '../lib/stocks';
+import { stockOf, oneLine, displayName } from '../lib/stocks';
 
 const { watchGroups } = await loadNews();
 ---
@@ -21,12 +21,12 @@ const { watchGroups } = await loadNews();
   ) : (
     <>
       <nav class="watch-index" aria-label="종목 바로가기">
-        {watchGroups.map((w) => <a href={`#w-${w.market}-${w.code}`}>{w.name}<small>{w.items.length}</small></a>)}
+        {watchGroups.map((w) => <a href={`#w-${w.market}-${w.code}`}>{displayName(w)}<small>{w.items.length}</small></a>)}
       </nav>
       {watchGroups.map((w) => (
         <section class="watch-block" id={`w-${w.market}-${w.code}`} aria-labelledby={`h-${w.market}-${w.code}`}>
           <h2 class="sec-h" id={`h-${w.market}-${w.code}`}>
-            <a href={`/watchlist/${w.code}`}>{w.name}</a> <span class="watch-code">{w.code} · {w.market === 'KR' ? '국내' : '미국'}</span>
+            <a href={`/watchlist/${w.code}`}>{displayName(w)}</a> <span class="watch-code">{w.code} · {w.market === 'KR' ? '국내' : '미국'}</span>
           </h2>
           {oneLine(stockOf(w.market, w.code)) && <p class="watch-fin">{oneLine(stockOf(w.market, w.code))} · <a href={`/watchlist/${w.code}`}>종목 페이지</a></p>}
           {w.items.length ? (

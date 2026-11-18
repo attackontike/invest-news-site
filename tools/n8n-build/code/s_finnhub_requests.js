@@ -1,4 +1,4 @@
-// 미국 관심 종목: 실적 발표 일정, 기본 지표, 최근 EPS (종목당 3개)
+// 미국 관심 종목: 실적 발표 일정, 기본 지표, 최근 EPS, 회사 프로필 (종목당 4개)
 const c = $('설정').first().json;
 const watch = (($('관심 종목 조회').first().json || {}).watchlist || []).filter((w) => w.market === 'US');
 if (!watch.length) return [{ json: { skip: true, url: 'https://finnhub.io/api/v1/stock/metric?symbol=AAPL&metric=all' } }];
@@ -9,5 +9,6 @@ for (const w of watch) {
   out.push({ json: { watch: w, kind: 'calendar', url: `https://finnhub.io/api/v1/calendar/earnings?from=${c.today}&to=${until}&symbol=${s}` } });
   out.push({ json: { watch: w, kind: 'metric', url: `https://finnhub.io/api/v1/stock/metric?symbol=${s}&metric=all` } });
   out.push({ json: { watch: w, kind: 'earnings', url: `https://finnhub.io/api/v1/stock/earnings?symbol=${s}&limit=4` } });
+  out.push({ json: { watch: w, kind: 'profile', url: `https://finnhub.io/api/v1/stock/profile2?symbol=${s}` } });
 }
 return out;

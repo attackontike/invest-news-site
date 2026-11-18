@@ -87,7 +87,7 @@ const kbChunks = [];
 const site = {};
 for (const w of watch) {
   const id = `${w.market}:${w.code}`;
-  const name = w.label || w.name;
+  let name = w.label || w.name;
   let row = { market: w.market, code: w.code, name, financials: {}, metrics: {}, earnings: [], next_earnings: null, latest_label: null, updated_at: c.nowIso };
   if (w.market === 'KR') {
     if (!w.corp_code) { report.push(`${name}: DART 고유번호 없음 (종목 사전 확인)`); continue; }
@@ -105,7 +105,11 @@ for (const w of watch) {
   } else {
     const f = fin[w.code] || {};
     const m = (f.metric || {}).metric || {};
+    // 회사 이름: Finnhub 프로필 → 이전 값. 관심 종목 이름이 티커 그대로면 일정·지식베이스 문구에 회사 이름을 씀
+    const companyName = (f.profile && f.profile.name) || ((existing[id] || {}).metrics || {}).companyName || null;
+    if (companyName && name === w.code) name = companyName;
     row.metrics = {
+      companyName,
       pe: pick(m, ['peTTM', 'peBasicExclExtraTTM', 'peExclExtraTTM']),
       eps: pick(m, ['epsTTM', 'epsBasicExclExtraItemsTTM', 'epsInclExtraItemsTTM']),
       revenueGrowthQ: pick(m, ['revenueGrowthQuarterlyYoy']),
@@ -136,7 +140,7 @@ for (const w of watch) {
 
 const siteJson = {
   updatedAt: c.nowIso,
-  stocks: Object.fromEntries(Object.entries(site).map(([k, r]) => [k, { market: r.market, code: r.code, name: r.name, financials: r.financials || {}, metrics: r.metrics || {}, earnings: r.earnings || [], nextEarnings: r.next_earnings || null }])),
+  stocks: Object.fromEntries(Object.entries(site).map(([k, r]) => [k, { market: r.market, code: r.code, name: r.name, companyName: (r.metrics || {}).companyName || null, financials: r.financials || {}, metrics: r.metrics || {}, earnings: r.earnings || [], nextEarnings: r.next_earnings || null }])),
 };
 function b64(str) {
   const by = [];

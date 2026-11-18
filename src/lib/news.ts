@@ -37,6 +37,9 @@ export type Item = {
 export type Watch = { market: string; code: string; name: string };
 export type Edition = { date: string; edition: string; generatedAt: string; briefing: string[] };
 
+// 종목별 목록에서 앞에 보여 줄 만한 기록: 공시이거나, 한국어 요약이 붙은 커뮤니티 외 기사
+export const isSolid = (it: Item) => it.tier === 'T1' || (!!it.summary && it.sourceGrade !== '커뮤니티');
+
 const isWebUrl = (u: string) => /^https?:\/\/[^\s]+$/i.test(u);
 const tkey = (t: { market?: string; code?: string }) => `${t.market}:${t.code}`;
 
@@ -84,7 +87,12 @@ async function build() {
   const watchSet = new Set(watchlist.map(tkey));
   const watchGroups = watchlist.map((w) => ({
     ...w,
-    items: recentAll.filter((it) => it.tickers.some((t) => t.code && tkey(t) === tkey(w))).slice(0, RULES.watchItems),
+    items: (() => {
+      const mine = recentAll.filter((it) => it.tickers.some((t) => t.code && tkey(t) === tkey(w)));
+      // 요약 있는 기사·공시를 먼저 채우고, 모자라면 나머지로 채운 뒤 다시 최신순
+      const picked = [...mine.filter(isSolid), ...mine.filter((it) => !isSolid(it))].slice(0, RULES.watchItems);
+      return picked.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+    })(),
   }));
 
   const editions: Edition[] = days.length

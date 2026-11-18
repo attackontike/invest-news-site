@@ -98,7 +98,7 @@ const pubNodes = [
   }, { executeOnce: true, alwaysOutputData: true }),
   codeNode('프롬프트 생성', [1200, 300], 'pub_prompts.js'),
   http('Gemini 요약·평가', [1440, 300], {
-    method: 'POST', url: GEM('geminiModel'), headerAuth: true, batch: [2, 3000], timeout: 240000,
+    method: 'POST', url: GEM('geminiModel'), headerAuth: true, batch: [1, 13000], timeout: 240000, // 무료 등급 분당 5회 제한: 13초 간격
     body: '={{ JSON.stringify($json.body) }}',
   }, { onError: 'continueErrorOutput', retryOnFail: true, maxTries: 3, waitBetweenTries: 5000 }),
   http('Gemini 예비 모델', [1680, 460], {

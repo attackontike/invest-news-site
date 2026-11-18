@@ -323,3 +323,7 @@ code { font-size: .875em; padding: .0625rem .3125rem; border-radius: 4px; backgr
 .weekly-link { margin: -1rem 0 2rem; padding: .75rem 1rem; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); font-size: .9375rem; }
 .weekly-link a { font-weight: 700; }
 .weekly-link span { color: var(--muted); }
+
+/* 종목 페이지: 접어 둔 기사 */
+.tl-more { margin-top: 1.5rem; }
+.tl-more > summary { cursor: pointer; color: var(--muted); font-size: .9375rem; padding: .5rem 0; }

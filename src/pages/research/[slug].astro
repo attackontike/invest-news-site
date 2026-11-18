@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { displayName, codeLabel } from '../../lib/stocks';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Refs from '../../components/Refs.astro';
 import { fmtDateTime, briefingHtml } from '../../lib/format';
@@ -24,8 +25,8 @@ const toneClass = r.tone.includes('호재') ? 'up' : r.tone.includes('악재') ?
       <time datetime={r.createdAt}>{fmtDateTime(r.createdAt)}</time>
       <span class="tone-badge" data-tone={toneClass}>{r.tone}</span>
       {r.tickers.map((t) => watchSet.has(`${t.market}:${t.code}`)
-        ? <a class="ticker-link" href={`/watchlist#w-${t.market}-${t.code}`}>★ {t.name} <small>{t.code}</small></a>
-        : <span class="ticker-link">{t.name} <small>{t.code}</small></span>)}
+        ? <a class="ticker-link" href={`/watchlist#w-${t.market}-${t.code}`}>★ {displayName(t)} {codeLabel(t) && <small>{codeLabel(t)}</small>}</a>
+        : <span class="ticker-link">{displayName(t)} {codeLabel(t) && <small>{codeLabel(t)}</small>}</span>)}
     </p>
   </header>
 

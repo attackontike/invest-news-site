@@ -1,5 +1,5 @@
 import market from '../data/market.json';
-import { stocks } from './stocks';
+import { stocks, displayName } from './stocks';
 
 export type Indicator = {
   key: string; market: 'KR' | 'US'; group?: string | null; name: string; unit: string; date: string; value: number | null;
@@ -15,7 +15,7 @@ export const kstToday = () => new Date(Date.now() + 9 * 3600_000).toISOString().
 // 경제 일정 + 관심 종목(미국) 실적 발표일
 const earningsEvents: EconEvent[] = Object.values(stocks)
   .filter((s) => s.nextEarnings)
-  .map((s) => ({ date: s.nextEarnings!.date, time: s.nextEarnings!.time, market: s.market, name: `${s.name}(${s.code}) 실적 발표`, importance: 2, source: 'Finnhub' }));
+  .map((s) => ({ date: s.nextEarnings!.date, time: s.nextEarnings!.time, market: s.market, name: `${displayName(s)}(${s.code}) 실적 발표`, importance: 2, source: 'Finnhub' }));
 export function upcoming(days: number) {
   const today = kstToday();
   const until = new Date(Date.parse(today) + days * 86400_000).toISOString().slice(0, 10);

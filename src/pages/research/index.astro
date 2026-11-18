@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { displayName } from '../../lib/stocks';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHead from '../../components/PageHead.astro';
 import { fmtDateTime, briefingHtml } from '../../lib/format';
@@ -25,7 +26,7 @@ const reports = (await getCollection('research')).sort((a, b) => b.data.createdA
           <p class="meta">
             <time datetime={r.data.createdAt}>{fmtDateTime(r.data.createdAt)}</time>
             <span class="tone-word">{r.data.tone}</span>
-            {r.data.tickers.map((t) => <span class="ticker-plain">{t.name}</span>)}
+            {r.data.tickers.map((t) => <span class="ticker-plain">{displayName(t)}</span>)}
           </p>
           <h3 class="title"><a href={`/research/${r.data.slug}`}>{r.data.title}</a></h3>
           {r.data.report.summary[0] && <p class="sum" set:html={briefingHtml(r.data.report.summary[0])} />}
