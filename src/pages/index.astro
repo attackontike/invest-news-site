@@ -6,9 +6,11 @@ import Empty from '../components/Empty.astro';
 import { loadNews, RULES } from '../lib/news';
 import { fmtDateTime, briefingHtml } from '../lib/format';
 import { upcoming } from '../lib/market';
+import { getCollection } from 'astro:content';
 
 const { editions, top, topFilings } = await loadNews();
 const soonEvents = upcoming(1);
+const lastWeekly = (await getCollection('weekly')).sort((a, b) => b.data.week.localeCompare(a.data.week))[0];
 const [latest, ...earlier] = editions;
 ---
 <BaseLayout title="시장 브리핑" description="국내·미국 시장 뉴스 요약" section="brief">
@@ -39,6 +41,10 @@ const [latest, ...earlier] = editions;
           </details>
         )}
       </section>
+
+      {lastWeekly && (
+        <p class="weekly-link">🗓️ <a href={`/weekly/${lastWeekly.data.week}`}>{lastWeekly.data.title}</a>{lastWeekly.data.report.headline && <span> · {lastWeekly.data.report.headline}</span>}</p>
+      )}
 
       {soonEvents.length > 0 && (
         <section class="today-ev" aria-labelledby="tev-h">

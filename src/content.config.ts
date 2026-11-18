@@ -81,4 +81,28 @@ const research = defineCollection({
   }),
 });
 
-export const collections = { digest, research };
+// n8n "주간 리포트" 워크플로가 매주 일요일 src/content/weekly/<YYYY-Www>.md 를 만듭니다.
+const weekly = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/weekly' }),
+  schema: z.object({
+    title: z.string(),
+    week: z.string(),
+    range: z.string(),
+    createdAt: z.string(),
+    ai: z.boolean().default(true),
+    report: z.object({
+      headline: z.string().default(''),
+      summary: z.array(z.string()).default([]),
+      market: z.array(refItem).default([]),
+      watch: z.array(refItem.extend({ name: z.string() })).default([]),
+      data: z.array(z.string()).default([]),
+      nextWeek: z.array(z.string()).default([]),
+    }),
+    events: z.array(z.object({ date: z.string(), time: z.string().nullable().optional(), market: z.string(), name: z.string(), importance: z.number().default(1) })).default([]),
+    stats: z.object({ articles: z.number().default(0), filings: z.number().default(0), research: z.number().default(0) }).default({ articles: 0, filings: 0, research: 0 }),
+    research: z.array(z.object({ title: z.string(), key: z.string() })).default([]),
+    sources: z.array(z.object({ id: z.string(), kind: z.string(), title: z.string(), source: z.string(), url: z.string().default(''), date: z.string().default(''), market: z.string().optional(), sentiment: z.string().optional() })).default([]),
+  }),
+});
+
+export const collections = { digest, research, weekly };

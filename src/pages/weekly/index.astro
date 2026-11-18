@@ -1,0 +1,24 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHead from '../../components/PageHead.astro';
+import { briefingHtml } from '../../lib/format';
+
+const list = (await getCollection('weekly')).sort((a, b) => b.data.week.localeCompare(a.data.week));
+---
+<BaseLayout title="주간 리포트" description="한 주의 시장 흐름과 다음 주 체크포인트" section="weekly">
+  <PageHead title="주간 리포트" lead="매주 일요일 아침, 지난 한 주의 공시·뉴스·지표·관심 종목 흐름과 다음 주 일정을 한 편으로 정리합니다." rule={`리포트 ${list.length}편`} />
+  {list.length === 0 ? (
+    <div class="empty"><p><strong>아직 주간 리포트가 없습니다.</strong></p><p>n8n "주간 리포트" 워크플로가 매주 일요일 08:00에 만듭니다.</p></div>
+  ) : (
+    <ol class="rows report-list">
+      {list.map((w) => (
+        <li class="report-row">
+          <p class="meta"><span class="tone-word">{w.data.week.replace('-W', '년 ')}주차</span><span>{w.data.range}</span>{!w.data.ai && <span>AI 요약 없음</span>}</p>
+          <h3 class="title"><a href={`/weekly/${w.data.week}`}>{w.data.report.headline || w.data.title}</a></h3>
+          {w.data.report.summary[0] && <p class="sum" set:html={briefingHtml(w.data.report.summary[0])} />}
+        </li>
+      ))}
+    </ol>
+  )}
+</BaseLayout>

@@ -1,0 +1,898 @@
+{
+  "name": "투자 뉴스 - 백업",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 6 * * 0"
+            }
+          ]
+        }
+      },
+      "id": "000000af-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "매주 일요일 06:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nconst now = new Date();\nreturn [{\n  json: {\n    githubOwner: 'YOUR-GITHUB-ID',\n    backupRepo: 'invest-backup', // 비공개 저장소 (README로 초기화해 둘 것)\n    backupBranch: 'main',\n    supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n    discordWebhookUrl: '', // 백업 결과를 받을 채널 웹훅. 비우면 알림 없음\n    overlapHours: 24, // 지난 백업 시점보다 이만큼 앞부터 다시 담음 (빠지는 것 방지)\n    nowIso: now.toISOString(),\n    today: new Date(now.getTime() + 9 * 3600_000).toISOString().slice(0, 10),\n  },\n}];\n"
+      },
+      "id": "000000b0-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "설정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/cursors?key=eq.backup_last&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000b1-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "백업 기준점 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 증분 기준 시각: 지난 백업 시점 - overlapHours. 처음이면 전체 백업\nconst c = $('설정').first().json;\nconst row = ($('백업 기준점 조회').all().map((i) => i.json).find((r) => r && r.key === 'backup_last')) || null;\nconst last = row && Date.parse(row.value);\nconst since = Number.isFinite(last) ? new Date(last - c.overlapHours * 3600_000).toISOString() : '';\nreturn [{ json: { since, full: !since } }];\n"
+      },
+      "id": "000000b2-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "기간 정하기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/watchlist?select=*&order=added_at.asc&limit=1000",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 120000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $pageCount * 1000 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "id": "000000b3-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "관심 종목 내보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/indicators?select=*&order=series_key.asc&limit=1000",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 120000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $pageCount * 1000 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "id": "000000b4-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "지표 내보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/stock_data?select=*&order=market.asc,code.asc&limit=1000",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 120000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $pageCount * 1000 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "id": "000000b5-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "종목 데이터 내보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/econ_events?select=*&order=event_date.asc&limit=1000",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 120000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $pageCount * 1000 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "id": "000000b6-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "일정 내보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/cursors?select=*&order=key.asc&limit=1000",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 120000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $pageCount * 1000 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "id": "000000b7-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "커서 내보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/reports?select=*&order=id.asc&limit=1000{{ $('기간 정하기').first().json.since ? '&' + 'created_at=gte.' + $('기간 정하기').first().json.since : '' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 120000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $pageCount * 1000 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "id": "000000b8-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "리포트 내보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/articles?select=*&order=id.asc&limit=1000{{ $('기간 정하기').first().json.since ? '&' + 'or=(collected_at.gte.' + $('기간 정하기').first().json.since + ',processed_at.gte.' + $('기간 정하기').first().json.since + ')' : '' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 120000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $pageCount * 1000 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "id": "000000b9-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "기사 내보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/kb_chunks?select=id,chunk_key,kind,is_ai,tier,source_grade,market,tickers,source,url,published_at,content,created_at&order=id.asc&limit=1000{{ $('기간 정하기').first().json.since ? '&' + 'created_at=gte.' + $('기간 정하기').first().json.since : '' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 120000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $pageCount * 1000 }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 200
+            }
+          }
+        }
+      },
+      "id": "000000ba-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "지식베이스 내보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 테이블별로 JSON Lines 파일(.jsonl, 한 줄에 한 행)을 만듭니다.\nconst c = $('설정').first().json;\nconst { since, full } = $('기간 정하기').first().json;\nconst rowsOf = (node) => $(node).all().map((i) => i.json).filter((r) => r && Object.keys(r).length);\nconst jsonl = (rows) => rows.map((r) => JSON.stringify(r)).join('\\n') + (rows.length ? '\\n' : '');\nconst delta = { articles: rowsOf('기사 내보내기'), kb_chunks: rowsOf('지식베이스 내보내기'), reports: rowsOf('리포트 내보내기') };\nconst latest = { watchlist: rowsOf('관심 종목 내보내기'), indicators: rowsOf('지표 내보내기'), stock_data: rowsOf('종목 데이터 내보내기'), econ_events: rowsOf('일정 내보내기'), cursors: rowsOf('커서 내보내기') };\n\nconst files = [];\nconst dir = `weekly/${c.today}`;\nfor (const [t, rows] of Object.entries(delta)) files.push({ path: `${dir}/${t}.jsonl`, content: jsonl(rows) });\nfor (const [t, rows] of Object.entries(latest)) files.push({ path: `latest/${t}.jsonl`, content: jsonl(rows) });\n\nconst counts = Object.fromEntries([...Object.entries(delta), ...Object.entries(latest)].map(([t, r]) => [t, r.length]));\nconst manifest = { createdAt: c.nowIso, mode: full ? 'full' : 'incremental', since: since || null, counts, note: 'kb_chunks는 embedding 없이 저장. 복구 때 scripts/restore.mjs가 다시 만듦' };\nfiles.push({ path: `${dir}/manifest.json`, content: JSON.stringify(manifest, null, 2) + '\\n' });\nfiles.push({\n  path: 'README.md',\n  content: `# 투자 뉴스 브리프 백업\n\nn8n \"투자 뉴스 - 백업\" 워크플로가 매주 일요일 자동으로 커밋합니다.\n\n| 폴더 | 내용 |\n|---|---|\n| \\`weekly/날짜/\\` | 지난 백업 이후 바뀐 기사(articles), 지식베이스(kb_chunks, 벡터 제외), 리포트(reports). 첫 폴더는 전체 |\n| \\`latest/\\` | 관심 종목, 지표, 종목 데이터, 경제 일정, 커서 전체 (매주 덮어씀, 이전 버전은 Git 기록에) |\n\n복구는 사이트 저장소의 \\`scripts/restore.mjs\\`를 쓰세요. weekly 폴더를 날짜 순서로 적용한 뒤 latest를 적용하고, 지식베이스 벡터를 다시 만듭니다.\n\n마지막 백업: ${c.nowIso} (${full ? '전체' : '증분'})\n`,\n});\nreturn files.map((f) => ({ json: f }));\n"
+      },
+      "id": "000000bb-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "백업 파일 만들기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.backupRepo }}/git/blobs",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: $json.content, encoding: 'utf-8' }) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 2,
+              "batchInterval": 500
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "000000bc-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "블롭 만들기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// 블롭(파일 내용) sha를 경로와 짝지어 트리 요청을 만듭니다.\nconst files = $('백업 파일 만들기').all().map((i) => i.json);\nconst blobs = $input.all().map((i) => i.json);\nif (blobs.length !== files.length || blobs.some((b) => !b.sha)) throw new Error(`블롭 생성 결과가 맞지 않습니다 (파일 ${files.length}개, 결과 ${blobs.length}개)`);\nreturn [{ json: { tree: files.map((f, i) => ({ path: f.path, mode: '100644', type: 'blob', sha: blobs[i].sha })) } }];\n"
+      },
+      "id": "000000bd-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "트리 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.backupRepo }}/git/trees/{{ $('설정').first().json.backupBranch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "000000be-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "백업 저장소 트리",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3300,
+        300
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.backupRepo }}/git/ref/heads/{{ $('설정').first().json.backupBranch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000bf-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "백업 기준 커밋",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        300
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.backupRepo }}/git/trees",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ base_tree: $('백업 저장소 트리').first().json.sha, tree: $('트리 준비').first().json.tree }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "000000c0-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "트리 만들기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3740,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.backupRepo }}/git/commits",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: 'backup: ' + $('설정').first().json.today, tree: $json.sha, parents: [$('백업 기준 커밋').first().json.object.sha] }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "000000c1-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "커밋 만들기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.backupRepo }}/git/refs/heads/{{ $('설정').first().json.backupBranch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ sha: $json.sha }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "000000c2-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "백업 반영",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 백업 시점 저장 + Discord 알림 내용\nconst c = $('설정').first().json;\nconst files = $('백업 파일 만들기').all().map((i) => i.json);\nconst manifest = JSON.parse(files.find((f) => f.path.endsWith('manifest.json')).content);\nconst k = manifest.counts;\nconst msg = `💾 백업 완료 (${manifest.mode === 'full' ? '전체' : '증분'}) · 기사 ${k.articles} · 지식베이스 ${k.kb_chunks} · 리포트 ${k.reports} · 관심 종목 ${k.watchlist} · 지표 ${k.indicators} · 종목 ${k.stock_data} · 일정 ${k.econ_events}`;\nreturn [{ json: { cursorRows: [{ key: 'backup_last', value: c.nowIso, updated_at: c.nowIso }], discord: { username: '투자 뉴스 브리프 · 백업', content: msg } } }];\n"
+      },
+      "id": "000000c3-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "백업 정리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/cursors?on_conflict=key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.cursorRows) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000c4-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "백업 시점 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4620,
+        300
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "if (!$('설정').first().json.discordWebhookUrl) return [];\nreturn [{ json: $('백업 정리').first().json.discord }];\n"
+      },
+      "id": "000000c5-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "Discord 사용?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4840,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.discordWebhookUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000c6-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "Discord 백업 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5060,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "매주 일요일 06:30": {
+      "main": [
+        [
+          {
+            "node": "설정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "설정": {
+      "main": [
+        [
+          {
+            "node": "백업 기준점 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "백업 기준점 조회": {
+      "main": [
+        [
+          {
+            "node": "기간 정하기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기간 정하기": {
+      "main": [
+        [
+          {
+            "node": "관심 종목 내보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "관심 종목 내보내기": {
+      "main": [
+        [
+          {
+            "node": "지표 내보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지표 내보내기": {
+      "main": [
+        [
+          {
+            "node": "종목 데이터 내보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "종목 데이터 내보내기": {
+      "main": [
+        [
+          {
+            "node": "일정 내보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "일정 내보내기": {
+      "main": [
+        [
+          {
+            "node": "커서 내보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "커서 내보내기": {
+      "main": [
+        [
+          {
+            "node": "리포트 내보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "리포트 내보내기": {
+      "main": [
+        [
+          {
+            "node": "기사 내보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "기사 내보내기": {
+      "main": [
+        [
+          {
+            "node": "지식베이스 내보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지식베이스 내보내기": {
+      "main": [
+        [
+          {
+            "node": "백업 파일 만들기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "백업 파일 만들기": {
+      "main": [
+        [
+          {
+            "node": "블롭 만들기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "블롭 만들기": {
+      "main": [
+        [
+          {
+            "node": "트리 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "트리 준비": {
+      "main": [
+        [
+          {
+            "node": "백업 저장소 트리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "백업 저장소 트리": {
+      "main": [
+        [
+          {
+            "node": "백업 기준 커밋",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "백업 기준 커밋": {
+      "main": [
+        [
+          {
+            "node": "트리 만들기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "트리 만들기": {
+      "main": [
+        [
+          {
+            "node": "커밋 만들기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "커밋 만들기": {
+      "main": [
+        [
+          {
+            "node": "백업 반영",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "백업 반영": {
+      "main": [
+        [
+          {
+            "node": "백업 정리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "백업 정리": {
+      "main": [
+        [
+          {
+            "node": "백업 시점 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "백업 시점 저장": {
+      "main": [
+        [
+          {
+            "node": "Discord 사용?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord 사용?": {
+      "main": [
+        [
+          {
+            "node": "Discord 백업 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Seoul",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

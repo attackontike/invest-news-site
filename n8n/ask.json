@@ -5,7 +5,7 @@
       "parameters": {
         "inputSource": "passthrough"
       },
-      "id": "00000078-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000078-0000-4000-8000-1a2b3c4d5e6f",
       "name": "질문 받음",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
@@ -18,7 +18,7 @@
       "parameters": {
         "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nconst cfg = {\n  supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n  geminiModel: 'gemini-3.8-flash',\n  fallbackModel: 'gemini-flash-lite-latest',\n  embeddingModel: 'gemini-embedding-001',\n  embedDim: 768,\n  matchCount: 12, // 종목으로 거른 검색 결과 수\n  extraCount: 6, // 전체에서 더 찾는 결과 수\n  maxSources: 14, // 답변에 넘길 최대 기록 수\n  defaultDays: 90, // 질문에 기간이 없을 때 찾아볼 기간\n  testQuestion: '최근 삼성전자 관련 주요 공시와 뉴스 흐름은?', // n8n에서 직접 실행할 때 쓰는 시험 질문\n};\n\nconst input = $input.first().json || {};\nconst fromDiscord = !!(input.question && input.appId && input.token);\nconst question = String(input.question || cfg.testQuestion).trim().slice(0, 200);\nconst interpretText = `사용자가 자신의 투자 뉴스 지식베이스에 질문했다. 검색에 필요한 정보를 뽑아라.\n\n질문: ${question}\n\n출력: JSON 하나만.\n{\"companies\": [질문의 중심 상장사 최대 3개. 국내는 {\"name\": 한국거래소 상장 종목명, \"market\": \"KR\"}, 미국은 {\"name\": 회사명, \"market\": \"US\", \"ticker\": 티커}. 없으면 빈 배열],\n \"days\": 질문에 기간이 있으면 일수(예: 최근 3개월 → 90, 이번 주 → 7), 없으면 null,\n \"searchText\": 의미 검색에 쓸 한국어 문장 (질문의 핵심 주제를 담아 한 문장)}`;\n\nreturn [{\n  json: {\n    ...cfg,\n    question,\n    userDays: Number(input.days) || null,\n    fromDiscord,\n    followUrl: fromDiscord ? `https://discord.com/api/v10/webhooks/${input.appId}/${input.token}` : '',\n    nowIso: new Date().toISOString(),\n    interpretBody: { contents: [{ role: 'user', parts: [{ text: interpretText }] }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 2048 } },\n  },\n}];\n"
       },
-      "id": "00000079-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000079-0000-4000-8000-1a2b3c4d5e6f",
       "name": "설정",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -40,7 +40,7 @@
           "timeout": 60000
         }
       },
-      "id": "0000007a-0000-4000-8000-01a1dfdaf77e",
+      "id": "0000007a-0000-4000-8000-1a2b3c4d5e6f",
       "name": "질문 해석",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -57,7 +57,7 @@
       "parameters": {
         "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// Gemini 응답에서 글자만 꺼내고, JSON이면 읽어 줍니다.\nfunction geminiText(j) {\n  const parts = ((((j || {}).candidates || [])[0] || {}).content || {}).parts || [];\n  return parts.filter((p) => !p.thought).map((p) => p.text || '').join('');\n}\nfunction parseJson(t) {\n  t = String(t || '').trim().replace(/^```(?:json)?\\s*/i, '').replace(/```\\s*$/, '');\n  try { return JSON.parse(t); } catch (e) {}\n  const a = t.indexOf('{'), b = t.lastIndexOf('}');\n  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }\n  return null;\n}\n// 질문 해석 정리. Gemini가 실패해도 질문 그대로 검색합니다.\nconst c = $('설정').first().json;\nconst o = parseJson(geminiText($input.first().json)) || {};\nconst companies = Array.isArray(o.companies) ? o.companies.filter((x) => x && x.name).slice(0, 3).map((x) => ({ name: String(x.name).slice(0, 40), market: x.market === 'US' ? 'US' : 'KR', ticker: x.ticker ? String(x.ticker).toUpperCase().trim() : '' })) : [];\nconst days = Math.max(1, Math.min(365, c.userDays || Number(o.days) || c.defaultDays));\nreturn [{\n  json: {\n    companies,\n    days,\n    searchText: String(o.searchText || c.question).slice(0, 300),\n    keys: companies.map((x) => nameKey(x.name)).filter(Boolean),\n    tickers: companies.map((x) => x.ticker).filter(Boolean),\n  },\n}];\n"
       },
-      "id": "0000007b-0000-4000-8000-01a1dfdaf77e",
+      "id": "0000007b-0000-4000-8000-1a2b3c4d5e6f",
       "name": "해석 정리",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -79,7 +79,7 @@
           "timeout": 30000
         }
       },
-      "id": "0000007c-0000-4000-8000-01a1dfdaf77e",
+      "id": "0000007c-0000-4000-8000-1a2b3c4d5e6f",
       "name": "종목 확인",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -92,7 +92,7 @@
       "parameters": {
         "jsCode": "// 회사명 비교용 키: 대문자, (주)·법인 접미사·기호 제거. 종목 사전과 게시 워크플로가 같은 규칙을 씀\nfunction nameKey(s) {\n  let t = String(s || '').toUpperCase();\n  t = t.replace(/\\(주\\)|㈜|주식회사|\\(유\\)/g, ' ').replace(/&/g, ' AND ').replace(/\\/[A-Z]{2}\\/?\\s*$/, ' ');\n  t = t.replace(/[.,'’\"()\\-\\/:;!]/g, ' ');\n  const STOP = new Set(['INC', 'INCORPORATED', 'CORP', 'CORPORATION', 'CO', 'COMPANY', 'LTD', 'LIMITED', 'PLC', 'HOLDINGS', 'HOLDING', 'GROUP', 'THE', 'CLASS', 'A', 'B', 'C', 'SA', 'NV', 'AG', 'SE', 'LLC', 'LP', 'ADR', 'DE', 'TECHNOLOGIES', 'TECHNOLOGY']);\n  return t.split(/\\s+/).filter((w) => w && !STOP.has(w)).join('');\n}\n// 회사를 종목 사전과 맞추고 검색 문장을 만듭니다.\nconst c = $('설정').first().json;\nconst q = $('해석 정리').first().json;\nconst ctx = $input.first().json || {};\nconst symbols = Array.isArray(ctx.symbols) ? ctx.symbols : [];\nconst targets = [];\nfor (const x of q.companies) {\n  const hit = (x.market === 'US' && x.ticker && symbols.find((s) => s.market === 'US' && s.code === x.ticker))\n    || symbols.find((s) => s.market === x.market && s.name_key === nameKey(x.name));\n  if (hit && !targets.some((t) => t.code === hit.code)) targets.push({ market: hit.market, code: hit.code, name: hit.market === 'KR' ? hit.name : x.name });\n}\nconst text = [q.searchText, ...targets.map((t) => t.name)].join(' / ');\nreturn [{\n  json: {\n    targets,\n    since: new Date(Date.now() - q.days * 86400_000).toISOString(),\n    embedBody: { content: { parts: [{ text }] }, taskType: 'RETRIEVAL_QUERY', outputDimensionality: c.embedDim },\n  },\n}];\n"
       },
-      "id": "0000007d-0000-4000-8000-01a1dfdaf77e",
+      "id": "0000007d-0000-4000-8000-1a2b3c4d5e6f",
       "name": "검색 준비",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -114,7 +114,7 @@
           "timeout": 60000
         }
       },
-      "id": "0000007e-0000-4000-8000-01a1dfdaf77e",
+      "id": "0000007e-0000-4000-8000-1a2b3c4d5e6f",
       "name": "질문 임베딩",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -131,7 +131,7 @@
       "parameters": {
         "jsCode": "// 지식베이스 검색 요청 두 개: 종목으로 거른 검색 + 전체 검색 (종목이 없으면 둘 다 전체)\nconst c = $('설정').first().json;\nconst p = $('검색 준비').first().json;\nconst v = ((($input.first().json || {}).embedding) || {}).values || [];\nif (v.length !== c.embedDim) return [{ json: { filtered: null, all: null } }];\nconst norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0)) || 1;\nconst vec = v.map((x) => Math.round((x / norm) * 1e6) / 1e6);\nconst codes = p.targets.map((t) => t.code);\nconst base = { query_embedding: vec, since: p.since, include_ai: true };\nreturn [{\n  json: {\n    filtered: { ...base, match_count: c.matchCount, filter_codes: codes.length ? codes : null },\n    all: { ...base, match_count: c.extraCount, filter_codes: null },\n  },\n}];\n"
       },
-      "id": "0000007f-0000-4000-8000-01a1dfdaf77e",
+      "id": "0000007f-0000-4000-8000-1a2b3c4d5e6f",
       "name": "검색 요청 만들기",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -153,7 +153,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000080-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000080-0000-4000-8000-1a2b3c4d5e6f",
       "name": "지식베이스 검색 (종목)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -178,7 +178,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000081-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000081-0000-4000-8000-1a2b3c4d5e6f",
       "name": "지식베이스 검색 (전체)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -194,7 +194,7 @@
       "parameters": {
         "jsCode": "// 검색 결과를 합쳐 번호(S1…)를 붙이고 답변 요청을 만듭니다.\nconst c = $('설정').first().json;\nconst q = $('해석 정리').first().json;\nconst p = $('검색 준비').first().json;\nconst rows = [...$('지식베이스 검색 (종목)').all(), ...$('지식베이스 검색 (전체)').all()].map((i) => i.json).filter((r) => r && r.chunk_key && r.content);\nconst seen = new Set();\nconst uniq = rows.filter((r) => (seen.has(r.chunk_key) ? false : (seen.add(r.chunk_key), true)));\nuniq.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));\nconst top = uniq.slice(0, c.maxSources).sort((a, b) => String(a.published_at).localeCompare(String(b.published_at)));\nconst KIND = { news: '뉴스', filing: '공시', briefing: '시장 브리핑', research: '리서치', qa: '리서치 Q&A', data: '데이터' };\nconst day = (iso) => (iso ? new Date(Date.parse(iso) + 9 * 3600_000).toISOString().slice(0, 10) : '');\nconst sources = top.map((r, i) => ({\n  id: `S${i + 1}`, date: day(r.published_at), kind: KIND[r.kind] || r.kind, source: r.source || '', url: r.url || '', isAI: !!r.is_ai,\n  title: String(r.content).split('\\n')[0].slice(0, 90), content: String(r.content).replace(/\\s+/g, ' ').slice(0, 350),\n}));\nconst recs = sources.map((s) => `[${s.id}] ${s.date} ${s.kind}${s.isAI ? ' (AI 해석)' : ''} · ${s.source} — ${s.content}`).join('\\n');\nconst text = `너는 사용자의 투자 뉴스 지식베이스를 검색해 답하는 비서다. 아래 기록만 근거로 질문에 한국어로 답하라.\n\n규칙\n- 기록에 없는 내용은 추측하지 말고 없다고 말하라.\n- 근거는 refs에 기록 번호(S1 등)로만 달고 URL은 쓰지 마라.\n- \"AI 해석\" 기록은 과거 브리핑·리포트의 해석이다. 사실처럼 쓰지 말고 \"당시 브리핑(리포트)은 ~로 봤다\"처럼 구분하라.\n- 시간 흐름을 묻는 질문이면 날짜 순서로 정리하라.\n- 매수·매도 권유, 목표주가, 가격 예측은 하지 마라.\n\n출력: JSON 하나만.\n{\"answer\": [{\"text\": \"문단 2~3문장\", \"refs\": [\"S1\",\"S4\"]}], \"found\": true 또는 false, \"gaps\": \"기록이 부족한 점 한 문장, 없으면 빈 문자열\"}\n\n질문: ${c.question}\n찾아본 기간: 최근 ${q.days}일${p.targets.length ? ` · 종목: ${p.targets.map((t) => `${t.name}(${t.code})`).join(', ')}` : ''}\n\n기록\n${recs || '(관련 기록 없음)'}`;\nreturn [{\n  json: {\n    sources,\n    answerBody: { contents: [{ role: 'user', parts: [{ text }] }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 4096 } },\n  },\n}];\n"
       },
-      "id": "00000082-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000082-0000-4000-8000-1a2b3c4d5e6f",
       "name": "근거 정리",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -216,7 +216,7 @@
           "timeout": 120000
         }
       },
-      "id": "00000083-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000083-0000-4000-8000-1a2b3c4d5e6f",
       "name": "답변 작성",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -242,7 +242,7 @@
           "timeout": 120000
         }
       },
-      "id": "00000084-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000084-0000-4000-8000-1a2b3c4d5e6f",
       "name": "답변 작성 (예비)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -259,7 +259,7 @@
       "parameters": {
         "mode": "append"
       },
-      "id": "00000085-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000085-0000-4000-8000-1a2b3c4d5e6f",
       "name": "답변 합치기",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
@@ -272,7 +272,7 @@
       "parameters": {
         "jsCode": "// Gemini 응답에서 글자만 꺼내고, JSON이면 읽어 줍니다.\nfunction geminiText(j) {\n  const parts = ((((j || {}).candidates || [])[0] || {}).content || {}).parts || [];\n  return parts.filter((p) => !p.thought).map((p) => p.text || '').join('');\n}\nfunction parseJson(t) {\n  t = String(t || '').trim().replace(/^```(?:json)?\\s*/i, '').replace(/```\\s*$/, '');\n  try { return JSON.parse(t); } catch (e) {}\n  const a = t.indexOf('{'), b = t.lastIndexOf('}');\n  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }\n  return null;\n}\n// Discord에 보낼 답변을 만듭니다. 근거 번호는 원문 링크로 바꿉니다.\nconst c = $('설정').first().json;\nconst q = $('해석 정리').first().json;\nconst p = $('검색 준비').first().json;\nconst { sources } = $('근거 정리').first().json;\nconst byId = Object.fromEntries(sources.map((s) => [s.id, s]));\nlet o = null;\nfor (const it of $input.all()) { o = parseJson(geminiText(it.json)); if (o && Array.isArray(o.answer)) break; o = null; }\n\nconst head = `**Q. ${c.question}**\\n_최근 ${q.days}일${p.targets.length ? ` · ${p.targets.map((t) => t.name).join(', ')}` : ''} · 기록 ${sources.length}건 검색_`;\nconst link = (r) => { const s = byId[r]; return s && /^https?:/.test(s.url) ? `[${r}](<${s.url}>)` : r; };\nlet content;\nif (!sources.length) {\n  content = `${head}\\n\\n지식베이스에서 관련 기록을 찾지 못했습니다. 기간을 늘려(days 옵션) 다시 묻거나, /research로 새로 조사해 보세요.`;\n} else if (!o) {\n  content = `${head}\\n\\n⚠️ 답변을 만들지 못했습니다(Gemini 응답 오류). 잠시 뒤 다시 물어봐 주세요.`;\n} else {\n  const ids = new Set(sources.map((s) => s.id));\n  const paras = o.answer.filter((x) => x && x.text).map((x) => {\n    const refs = (Array.isArray(x.refs) ? x.refs : []).map(String).filter((r) => ids.has(r)).slice(0, 5);\n    return `${String(x.text).replace(/https?:\\/\\/\\S+/g, '').trim()}${refs.length ? ' ' + refs.map(link).join(' ') : ''}`;\n  });\n  const used = [...new Set(o.answer.flatMap((x) => (Array.isArray(x.refs) ? x.refs.map(String) : [])))].filter((r) => ids.has(r));\n  const srcLines = used.slice(0, 8).map((r) => { const s = byId[r]; return `${r} ${s.date} ${s.kind}${s.isAI ? ' (AI 해석)' : ''} · ${s.title.slice(0, 60)}`; });\n  content = [\n    head,\n    '',\n    ...paras,\n    o.gaps ? `\\n_부족한 점: ${String(o.gaps).trim()}_` : '',\n    srcLines.length ? `\\n**근거**\\n${srcLines.join('\\n')}` : '',\n  ].filter((x) => x !== '').join('\\n');\n}\nif (content.length > 1990) content = content.slice(0, 1985) + '…';\nreturn [{ json: { content } }];\n"
       },
-      "id": "00000086-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000086-0000-4000-8000-1a2b3c4d5e6f",
       "name": "답변 완성",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -285,7 +285,7 @@
       "parameters": {
         "jsCode": "// Discord에서 물어본 경우만 답변을 보냅니다 (n8n에서 직접 실행하면 \"답변 완성\" 출력에서 확인).\nif (!$('설정').first().json.followUrl) return [];\nreturn [{ json: $('답변 완성').first().json }];\n"
       },
-      "id": "00000087-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000087-0000-4000-8000-1a2b3c4d5e6f",
       "name": "답변 보낼까?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -305,7 +305,7 @@
           "timeout": 30000
         }
       },
-      "id": "00000088-0000-4000-8000-01a1dfdaf77e",
+      "id": "00000088-0000-4000-8000-1a2b3c4d5e6f",
       "name": "Discord 답변",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,

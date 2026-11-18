@@ -2,14 +2,16 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHead from '../components/PageHead.astro';
 import Spark from '../components/Spark.astro';
-import { indicators, upcoming, updatedAt, fmtValue, fmtChange, kstToday } from '../lib/market';
+import { indicators, upcoming, updatedAt, fmtValue, fmtChange, kstToday, thermometer, sentimentNote } from '../lib/market';
 import { fmtDay, fmtDateTime } from '../lib/format';
 
 // 변화는 저장된 값 대신 최근 값과 이전 값의 차이로 계산 (소수점 반올림 오차 방지)
 const chg = (i: (typeof indicators)[number]) => (i.value !== null && i.prev !== null ? i.value - i.prev : i.change);
+const mood = indicators.filter((i) => i.group === 'sentiment');
+const temp = thermometer();
 const groups = [
-  { id: 'KR', title: '한국', list: indicators.filter((i) => i.market === 'KR') },
-  { id: 'US', title: '미국', list: indicators.filter((i) => i.market === 'US') },
+  { id: 'KR', title: '한국', list: indicators.filter((i) => i.market === 'KR' && i.group !== 'sentiment') },
+  { id: 'US', title: '미국', list: indicators.filter((i) => i.market === 'US' && i.group !== 'sentiment') },
 ];
 const evs = upcoming(14);
 const byDay = [...new Set(evs.map((e) => e.date))].map((d) => ({ day: d, items: evs.filter((e) => e.date === d) }));
@@ -30,6 +32,33 @@ const ref = new Date();
     </div>
   ) : (
     <div class="data-grid">
+      {mood.length > 0 && (
+        <section aria-labelledby="g-mood">
+          <h2 id="g-mood" class="sec-h">시장 심리</h2>
+          {temp && (
+            <div class="thermo" data-level={temp.level}>
+              <div class="thermo-bar" role="img" aria-label={`시장 온도계 ${temp.label}`}>
+                {[1, 2, 3, 4].map((n) => <span class={n <= temp.level ? 'on' : ''}></span>)}
+              </div>
+              <p class="thermo-label">시장 온도계 <strong>{temp.label}</strong></p>
+              <p class="thermo-note">VIX {temp.vix ?? '-'} · 하이일드 스프레드 {temp.hy ?? '-'}% 기준. VIX 15·20·30, 스프레드 3.5·4.5·6%를 경계로 안정·보통·불안·공포로 나눈 참고용 표시이며 매매 신호가 아닙니다.</p>
+            </div>
+          )}
+          <ul class="ind-list ind-grid">
+            {mood.map((i) => (
+              <li class="ind" data-dir={i.change && i.change > 0 ? 'up' : i.change && i.change < 0 ? 'down' : 'flat'}>
+                <div class="ind-main">
+                  <p class="ind-name">{i.name}</p>
+                  <p class="ind-value">{fmtValue(i.value, i.unit)}{sentimentNote(i) && <span class="mood-tag">{sentimentNote(i)}</span>}</p>
+                  <p class="ind-meta"><span class="ind-chg">{fmtChange(i.value !== null && i.prev !== null ? i.value - i.prev : i.change, i.unit)}</span><span>{i.date} · {i.source}</span></p>
+                </div>
+                <Spark points={i.history} label={`${i.name} 최근 추이`} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div class="data-cols">
         {groups.map((g) => g.list.length > 0 && (
           <section aria-labelledby={`g-${g.id}`}>

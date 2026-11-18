@@ -1,0 +1,69 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Refs from '../../components/Refs.astro';
+import { briefingHtml, fmtDay } from '../../lib/format';
+
+export async function getStaticPaths() {
+  return (await getCollection('weekly')).map((w) => ({ params: { week: w.data.week }, props: { w: w.data } }));
+}
+const { w } = Astro.props;
+const r = w.report;
+const byId = Object.fromEntries(w.sources.map((s) => [s.id, { ...s, isAI: false }]));
+const days = [...new Set(w.events.map((e) => e.date))];
+---
+<BaseLayout title={w.title} description={`주간 리포트 ${w.range}`} section="weekly">
+  <p class="crumb"><a href="/weekly">주간 리포트</a></p>
+  <header class="page-head report-head">
+    <h1>{w.title}</h1>
+    {r.headline && <p class="lead">{r.headline}</p>}
+    <p class="report-meta"><span>기사 {w.stats.articles}건</span><span>공시 {w.stats.filings}건</span><span>리서치 {w.stats.research}편</span>{!w.ai && <span class="ai-tag">AI 요약 없이 자동 정리</span>}</p>
+  </header>
+
+  {r.summary.length > 0 && (
+    <section class="brief" aria-labelledby="w-sum">
+      <h2 id="w-sum" class="brief-h">이번 주 핵심 {w.ai && <span class="ai-tag">AI 정리</span>}</h2>
+      <ul class="brief-lines">{r.summary.map((l) => <li set:html={briefingHtml(l)} />)}</ul>
+    </section>
+  )}
+
+  <div class="report-body">
+    {r.market.length > 0 && (
+      <section aria-labelledby="w-mk"><h2 id="w-mk" class="sec-h">이번 주 시장 흐름</h2>
+        <ul class="facts">{r.market.map((x) => <li>{x.text} <Refs refs={x.refs} byId={byId} /></li>)}</ul></section>
+    )}
+    {r.watch.length > 0 && (
+      <section aria-labelledby="w-wt"><h2 id="w-wt" class="sec-h">관심 종목</h2>
+        <ul class="facts">{r.watch.map((x) => <li><strong>{x.name}</strong>: {x.text} <Refs refs={x.refs} byId={byId} /></li>)}</ul></section>
+    )}
+    {r.data.length > 0 && (
+      <section aria-labelledby="w-dt"><h2 id="w-dt" class="sec-h">지표·시장 심리</h2>
+        <ul class="facts">{r.data.map((l) => <li>{l}</li>)}</ul>
+        <p class="sec-note"><a href="/data">지표 전체 보기</a></p></section>
+    )}
+    {(r.nextWeek.length > 0 || days.length > 0) && (
+      <section aria-labelledby="w-nx"><h2 id="w-nx" class="sec-h">다음 주</h2>
+        {r.nextWeek.length > 0 && <ul class="checks">{r.nextWeek.map((l) => <li>{l}</li>)}</ul>}
+        {days.length > 0 && (
+          <ol class="ev-days">
+            {days.map((d) => (
+              <li><h3 class="ev-day">{fmtDay(d)}</h3>
+                <ul class="ev-list">{w.events.filter((e) => e.date === d).map((e) => (
+                  <li data-imp={e.importance}><span class="ev-time">{e.time ?? '시간 미정'}</span><span class="ev-flag">{e.market === 'US' ? '미국' : '한국'}</span><span class="ev-name">{e.name}</span><span class="ev-imp">{'★'.repeat(e.importance)}</span></li>
+                ))}</ul></li>
+            ))}
+          </ol>
+        )}</section>
+    )}
+    {w.research.length > 0 && (
+      <section aria-labelledby="w-rs"><h2 id="w-rs" class="sec-h">이번 주 리서치</h2>
+        <ul class="facts">{w.research.map((x) => <li><a href={`/research/${x.key.replace(/^research:/, '')}`}>{x.title}</a></li>)}</ul></section>
+    )}
+    {w.sources.length > 0 && (
+      <section aria-labelledby="w-src"><h2 id="w-src" class="sec-h">출처</h2>
+        <ol class="sources">{w.sources.map((s) => (
+          <li><span class="ref" data-kind={s.kind === 'filing' ? 'F' : 'N'}>{s.id}</span><span class="src-date">{s.date}</span><span class="src-name">{s.source}</span>{s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a> : <span>{s.title}</span>}</li>
+        ))}</ol></section>
+    )}
+  </div>
+</BaseLayout>

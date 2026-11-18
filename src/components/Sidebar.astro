@@ -4,17 +4,19 @@ import { fmtDateTime } from '../lib/format';
 
 import { getCollection } from 'astro:content';
 import { upcoming } from '../lib/market';
-interface Props { current: 'brief' | 'news' | 'filings' | 'watchlist' | 'research' | 'data' }
+interface Props { current: 'brief' | 'news' | 'filings' | 'watchlist' | 'research' | 'data' | 'weekly' }
 const { current } = Astro.props;
 const { generatedAt, news, filings, watchlist } = await loadNews();
 const discord = import.meta.env.PUBLIC_DISCORD_INVITE;
 const reports = (await getCollection('research')).length;
+const weeklies = (await getCollection('weekly')).sort((a, b) => b.data.week.localeCompare(a.data.week));
 
 const live = [
   { id: 'brief', href: '/', label: '시장 브리핑', desc: '하루 4번 정리하는 시장 요약' },
   { id: 'news', href: '/news', label: '시장 뉴스', desc: `최근 7일 기사 ${news.length}건` },
   { id: 'filings', href: '/filings', label: '공시·공식 발표', desc: `최근 7일 ${filings.length}건` },
   { id: 'watchlist', href: '/watchlist', label: '관심 종목', desc: watchlist.length ? `${watchlist.length}개 종목` : '아직 등록된 종목 없음' },
+  { id: 'weekly', href: '/weekly', label: '주간 리포트', desc: weeklies.length ? `최근 ${weeklies[0].data.week.replace('-W', '년 ')}주차` : '매주 일요일 08:00' },
   { id: 'research', href: '/research', label: '리서치', desc: reports ? `리포트 ${reports}개` : 'Discord /research로 요청' },
   { id: 'data', href: '/data', label: '데이터·일정', desc: `2주 일정 ${upcoming(14).length}건` },
 ];

@@ -1,0 +1,749 @@
+{
+  "name": "투자 뉴스 - 주간 리포트",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 0"
+            }
+          ]
+        }
+      },
+      "id": "000000c7-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "매주 일요일 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== 바꿀 값은 이 노드에만 있습니다 =====\nconst cfg = {\n  githubOwner: 'YOUR-GITHUB-ID',\n  githubRepo: 'invest-news-site',\n  githubBranch: 'main',\n  siteUrl: 'https://invest-news-site.vercel.app',\n  supabaseUrl: 'https://YOUR-PROJECT.supabase.co',\n  vaultRepo: 'invest-vault', // 비우면 옵시디안 노트를 만들지 않음\n  vaultBranch: 'main',\n  discordWebhookUrl: '', // #브리핑 웹훅. 비우면 알림 없음\n  geminiModel: 'gemini-3.8-flash',\n  fallbackModel: 'gemini-flash-lite-latest',\n  embeddingModel: 'gemini-embedding-001',\n  embedDim: 768,\n  maxStories: 25, // 이번 주 주요 뉴스 후보 수\n  maxFilings: 12, // 이번 주 주요 공시 후보 수\n};\n// 이번 주 = 오늘(한국 시간) 기준 월~일, 다음 주 = 그다음 월~일\nconst now = new Date();\nconst kstMs = now.getTime() + 9 * 3600_000;\nconst d = new Date(kstMs);\nconst dow = (d.getUTCDay() + 6) % 7; // 월=0 … 일=6\nconst day = (off) => new Date(kstMs + off * 86400_000).toISOString().slice(0, 10);\nconst mon = day(-dow), sun = day(6 - dow), nextMon = day(7 - dow), nextSun = day(13 - dow);\n// ISO 주차\nconst t = new Date(Date.UTC(+mon.slice(0, 4), +mon.slice(5, 7) - 1, +mon.slice(8, 10) + 3));\nconst y = t.getUTCFullYear();\nconst week = Math.ceil(((t - Date.UTC(y, 0, 1)) / 86400000 + 1) / 7); // t는 그 주의 목요일\nconst wk = `${y}-W${String(week).padStart(2, '0')}`;\nreturn [{\n  json: {\n    ...cfg,\n    nowIso: now.toISOString(),\n    mon, sun, nextMon, nextSun,\n    sinceIso: new Date(Date.parse(`${mon}T00:00:00+09:00`)).toISOString(),\n    week: wk,\n    title: `${y}년 ${week}주차 주간 리포트 (${mon.slice(5).replace('-', '.')}~${sun.slice(5).replace('-', '.')})`,\n  },\n}];\n"
+      },
+      "id": "000000c8-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "설정",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        230,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/articles?status=eq.published&published_at=gte.{{ $('설정').first().json.sinceIso }}&select=id,url,title,title_ko,source,source_grade,tier,market,published_at,sentiment,importance,coverage,story_key,tickers,event_type&order=importance.desc&limit=1000",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "000000c9-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "주간 기사 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/indicators?select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000ca-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "지표 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        690,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/econ_events?event_date=gte.{{ $('설정').first().json.nextMon }}&event_date=lte.{{ $('설정').first().json.nextSun }}&select=*&order=event_date.asc",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000cb-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "다음 주 일정 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/rpc/t1_context",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000cc-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "관심 종목 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1150,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/reports?kind=eq.research&created_at=gte.{{ $('설정').first().json.sinceIso }}&select=report_key,title,created_at",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000cd-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "주간 리서치 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 한 주치 자료를 모아 번호(W1…)를 붙이고 Gemini 요청을 만듭니다.\nconst c = $('설정').first().json;\nconst rows = (n) => $(n).all().map((i) => i.json).filter((r) => r && Object.keys(r).length);\nconst arts = rows('주간 기사 조회');\nconst inds = rows('지표 조회');\nconst events = rows('다음 주 일정 조회');\nconst watch = (($('관심 종목 조회').first().json || {}).watchlist) || [];\nconst research = rows('주간 리서치 조회');\nconst day = (iso) => new Date(Date.parse(iso) + 9 * 3600_000).toISOString().slice(0, 10);\n\n// 사건마다 대표 1건 (신뢰도·중요도 높은 것), 뉴스와 공시 따로\nfunction reps(list, n) {\n  const m = new Map();\n  for (const a of list) {\n    const k = a.story_key || `a-${a.id}`;\n    const cur = m.get(k);\n    if (!cur || (a.importance || 0) > (cur.importance || 0)) m.set(k, a);\n  }\n  return [...m.values()].sort((a, b) => (b.importance || 0) - (a.importance || 0)).slice(0, n);\n}\nconst news = reps(arts.filter((a) => a.tier !== 'T1'), c.maxStories);\nconst filings = reps(arts.filter((a) => a.tier === 'T1'), c.maxFilings);\n\nconst sources = [];\nconst add = (a, kind) => { const id = `W${sources.length + 1}`; sources.push({ id, kind, title: a.title_ko || a.title, source: a.source, url: a.url, date: day(a.published_at), market: a.market, sentiment: a.sentiment || '중립', importance: a.importance || 0, tickers: a.tickers || [] }); return id; };\nfilings.forEach((a) => add(a, 'filing'));\nnews.forEach((a) => add(a, 'news'));\n\n// 관심 종목별 한 주 통계\nconst has = (a, w) => (a.tickers || []).some((t) => t.code === w.code && t.market === w.market);\nconst watchStats = watch.map((w) => {\n  const mine = arts.filter((a) => has(a, w));\n  const cnt = (s) => mine.filter((a) => a.sentiment === s).length;\n  return { market: w.market, code: w.code, name: w.name, total: mine.length, filings: mine.filter((a) => a.tier === 'T1').length, up: cnt('호재'), down: cnt('악재'), refs: sources.filter((s) => s.tickers.some((t) => t.code === w.code && t.market === w.market)).slice(0, 4).map((s) => s.id) };\n});\n\n// 지표: 최근 값과 1주 전 값 (일간 지표만 1주 비교, 월간 지표는 이번 주 발표된 경우 표시)\nconst num = (v) => (v === null || v === undefined ? '-' : Number(v).toLocaleString('en-US', { maximumFractionDigits: Math.abs(v) < 10 ? 4 : 2 }));\nconst indLines = inds.map((i) => {\n  const h = Array.isArray(i.history) ? i.history : [];\n  const daily = /^\\d{4}-\\d{2}-\\d{2}$/.test(String(i.latest_date || ''));\n  let line = `${i.name}: ${num(i.latest_value)}${i.unit === '%' ? '%' : ` ${i.unit}`} (${i.latest_date})`;\n  if (daily) {\n    const prev = [...h].reverse().find((p) => p[0] < c.mon);\n    if (prev && i.latest_value !== null) line += `, 1주 전 ${num(prev[1])} → ${(i.latest_value - prev[1] >= 0 ? '+' : '')}${num(Math.round((i.latest_value - prev[1]) * 10000) / 10000)}`;\n  } else if (String(i.updated_at || '') >= c.sinceIso && i.prev_value !== null) {\n    line += `, 이전 발표 ${num(i.prev_value)}`;\n  }\n  return { key: i.series_key, market: i.market, line };\n});\n\nconst evLines = events.map((e) => `${e.event_date} ${e.event_time || ''} [${e.market === 'US' ? '미국' : '한국'}] ${e.name}${'★'.repeat(e.importance || 1)}`.replace(/\\s+/g, ' ').trim());\nconst line = (s) => `[${s.id}] ${s.date} ${s.source} · ${s.title} (중요도 ${s.importance}, ${s.sentiment})`;\nconst pack = [\n  `기간: ${c.mon} ~ ${c.sun}`,\n  '', '## 이번 주 주요 공시 (W)', ...(sources.filter((s) => s.kind === 'filing').map(line)), sources.some((s) => s.kind === 'filing') ? '' : '(없음)',\n  '', '## 이번 주 주요 뉴스 (W)', ...(sources.filter((s) => s.kind === 'news').map(line)), sources.some((s) => s.kind === 'news') ? '' : '(없음)',\n  '', '## 관심 종목 이번 주 통계', ...(watchStats.length ? watchStats.map((w) => `${w.name}(${w.code}): 기사 ${w.total}건, 공시 ${w.filings}건, 호재 ${w.up} · 악재 ${w.down}, 관련 번호 ${w.refs.join(', ') || '없음'}`) : ['(관심 종목 없음)']),\n  '', '## 지표 (최근 값, 1주 비교)', ...indLines.map((l) => l.line),\n  '', `## 다음 주 일정 (${c.nextMon} ~ ${c.nextSun}, 한국 시간)`, ...(evLines.length ? evLines : ['(없음)']),\n  '', '## 이번 주 리서치', ...(research.length ? research.map((r) => `- ${r.title}`) : ['(없음)']),\n].join('\\n');\n\nconst text = `너는 한국 개인 투자자를 위한 주간 시장 리포트 편집자다. 아래 자료만 근거로 지난 한 주를 정리하고 다음 주를 준비하는 리포트를 한국어로 써라.\n\n규칙\n- 자료에 없는 사실을 만들지 마라. 근거는 refs에 번호(W1 등)로만 달고 URL은 쓰지 마라.\n- 매수·매도 권유, 목표주가, 가격 예측은 쓰지 마라. \"체크포인트\"는 확인할 일정·지표·공시로만.\n- 지표는 숫자 변화를 그대로 전하고 해석은 짧게.\n\n출력: JSON 하나만.\n{\"headline\": \"이번 주를 한 문장으로\",\n \"summary\": [\"**핵심어**: 문장\" 3~5줄],\n \"market\": [{\"text\": \"이번 주 시장 흐름 1~2문장\", \"refs\": [\"W3\"]}] 3~5개,\n \"watch\": [{\"name\": \"관심 종목 이름\", \"text\": \"이번 주 그 종목 소식 1~2문장 (없으면 '특별한 소식 없음')\", \"refs\": [\"W1\"]}],\n \"data\": [\"지표·시장 심리 변화 한 문장\"] 2~4개,\n \"nextWeek\": [\"다음 주 체크포인트 (날짜 포함)\"] 3~5개}\n\n${pack}`;\n\nreturn [{\n  json: {\n    sources, watchStats, indLines, events: events.map((e) => ({ date: e.event_date, time: e.event_time, market: e.market, name: e.name, importance: e.importance })),\n    research: research.map((r) => ({ title: r.title, key: r.report_key })),\n    stats: { articles: arts.length, filings: arts.filter((a) => a.tier === 'T1').length, research: research.length },\n    body: { contents: [{ role: 'user', parts: [{ text }] }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 8192, thinkingConfig: { thinkingLevel: 'low' } } },\n  },\n}];\n"
+      },
+      "id": "000000ce-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "자료 정리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1610,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('설정').first().json.geminiModel }}:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "000000cf-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "주간 리포트 작성",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        300
+      ],
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('설정').first().json.fallbackModel }}:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('자료 정리').first().json.body) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "000000d0-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "주간 리포트 작성 (예비)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2070,
+        460
+      ],
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "000000d1-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "결과 합치기",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gemini 응답에서 글자만 꺼내고, JSON이면 읽어 줍니다.\nfunction geminiText(j) {\n  const parts = ((((j || {}).candidates || [])[0] || {}).content || {}).parts || [];\n  return parts.filter((p) => !p.thought).map((p) => p.text || '').join('');\n}\nfunction parseJson(t) {\n  t = String(t || '').trim().replace(/^```(?:json)?\\s*/i, '').replace(/```\\s*$/, '');\n  try { return JSON.parse(t); } catch (e) {}\n  const a = t.indexOf('{'), b = t.lastIndexOf('}');\n  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }\n  return null;\n}\n// 주간 리포트 완성. Gemini가 실패하면 숫자·목록만으로 된 리포트를 대신 만듭니다.\nconst c = $('설정').first().json;\nconst P = $('자료 정리').first().json;\nconst { sources } = P;\nconst ids = new Set(sources.map((s) => s.id));\nconst byId = Object.fromEntries(sources.map((s) => [s.id, s]));\nconst clean = (s) => String(s || '').replace(/https?:\\/\\/\\S+/g, '').trim();\nconst refs = (r) => (Array.isArray(r) ? r.map(String).filter((x) => ids.has(x)).slice(0, 5) : []);\n\nlet o = null;\nfor (const it of $input.all()) { o = parseJson(geminiText(it.json)); if (o && Array.isArray(o.summary)) break; o = null; }\nconst ai = !!o;\nlet rep;\nif (ai) {\n  rep = {\n    headline: clean(o.headline),\n    summary: (o.summary || []).map(clean).filter(Boolean).slice(0, 5),\n    market: (o.market || []).map((x) => ({ text: clean(x.text), refs: refs(x.refs) })).filter((x) => x.text).slice(0, 6),\n    watch: (o.watch || []).map((x) => ({ name: clean(x.name), text: clean(x.text), refs: refs(x.refs) })).filter((x) => x.name && x.text),\n    data: (o.data || []).map(clean).filter(Boolean).slice(0, 5),\n    nextWeek: (o.nextWeek || []).map(clean).filter(Boolean).slice(0, 6),\n  };\n} else {\n  const top = sources.filter((s) => s.kind === 'news').slice(0, 5);\n  rep = {\n    headline: '이번 주 주요 뉴스와 지표 정리 (AI 요약 없이 자동 정리)',\n    summary: top.slice(0, 3).map((s) => `**${s.source}**: ${s.title}`),\n    market: top.map((s) => ({ text: s.title, refs: [s.id] })),\n    watch: P.watchStats.map((w) => ({ name: w.name, text: `기사 ${w.total}건, 공시 ${w.filings}건 (호재 ${w.up} · 악재 ${w.down})`, refs: w.refs })),\n    data: P.indLines.slice(0, 6).map((l) => l.line),\n    nextWeek: P.events.filter((e) => (e.importance || 1) >= 2).slice(0, 6).map((e) => `${e.date.slice(5).replace('-', '.')} ${e.time || ''} ${e.name}`.replace(/\\s+/g, ' ')),\n  };\n}\nconst used = new Set([...rep.market, ...rep.watch].flatMap((x) => x.refs));\nconst usedSources = sources.filter((s) => used.has(s.id)).map(({ tickers, importance, ...s }) => s);\n\nfunction b64(str) {\n  const by = [];\n  for (let i = 0; i < str.length; i++) {\n    let cp = str.charCodeAt(i);\n    if (cp >= 0xd800 && cp < 0xdc00 && i + 1 < str.length) { const lo = str.charCodeAt(i + 1); if (lo >= 0xdc00 && lo < 0xe000) { cp = 0x10000 + ((cp - 0xd800) << 10) + (lo - 0xdc00); i++; } }\n    if (cp < 0x80) by.push(cp); else if (cp < 0x800) by.push(0xc0 | (cp >> 6), 0x80 | (cp & 63)); else if (cp < 0x10000) by.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63)); else by.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));\n  }\n  const T = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';\n  let out = '';\n  for (let i = 0; i < by.length; i += 3) { const n = (by[i] << 16) | ((by[i + 1] || 0) << 8) | (by[i + 2] || 0); out += T[(n >> 18) & 63] + T[(n >> 12) & 63] + (i + 1 < by.length ? T[(n >> 6) & 63] : '=') + (i + 2 < by.length ? T[n & 63] : '='); }\n  return out;\n}\n\n// ---------- 사이트 파일 ----------\nconst site = [\n  '---',\n  `title: ${JSON.stringify(c.title)}`,\n  `week: ${JSON.stringify(c.week)}`,\n  `range: ${JSON.stringify(`${c.mon} ~ ${c.sun}`)}`,\n  `createdAt: ${JSON.stringify(c.nowIso)}`,\n  `ai: ${ai}`,\n  `report: ${JSON.stringify(rep)}`,\n  `events: ${JSON.stringify(P.events)}`,\n  `stats: ${JSON.stringify(P.stats)}`,\n  `research: ${JSON.stringify(P.research)}`,\n  usedSources.length ? 'sources:' : 'sources: []',\n  ...usedSources.map((s) => `  - ${JSON.stringify(s)}`),\n  '---',\n  '',\n].join('\\n');\n\n// ---------- 옵시디안 ----------\nconst esc = (t) => String(t).replace(/[[\\]]/g, (m) => '\\\\' + m);\nconst link = (r) => { const s = byId[r]; return s && s.url ? `[${r}](${s.url})` : r; };\nconst withRefs = (x) => `${x.text}${x.refs.length ? ' ' + x.refs.map(link).join(' ') : ''}`;\nconst sec = (t, lines) => (lines.length ? [`## ${t}`, ...lines, ''] : []);\nconst vault = [\n  '---',\n  `주차: ${JSON.stringify(c.week)}`,\n  `기간: ${JSON.stringify(`${c.mon} ~ ${c.sun}`)}`,\n  `AI해석: ${ai}`,\n  `사이트: ${JSON.stringify(`${c.siteUrl}/weekly/${c.week}`)}`,\n  'tags: [\"주간리포트\"]',\n  '---',\n  '',\n  `# ${c.title}`,\n  '',\n  rep.headline ? `> ${rep.headline}` : '',\n  '',\n  ...sec(ai ? '핵심 (AI 요약)' : '핵심', rep.summary.map((l) => `- ${l}`)),\n  ...sec('이번 주 시장 흐름', rep.market.map((x) => `- ${withRefs(x)}`)),\n  ...sec('관심 종목', rep.watch.map((x) => `- **${x.name}**: ${withRefs(x)}`)),\n  ...sec('지표·시장 심리', rep.data.map((l) => `- ${l}`)),\n  ...sec('다음 주 체크포인트', rep.nextWeek.map((l) => `- [ ] ${l}`)),\n  ...sec('출처', usedSources.map((s) => `- ${s.id} ${s.date} ${s.source} · ${s.url ? `[${esc(s.title)}](${s.url})` : s.title}`)),\n  `관련: [[${c.sun} 시장]]`,\n  '',\n].join('\\n');\n\n// ---------- Discord ----------\nconst discord = [\n  `🗓️ **${c.title}**`,\n  rep.headline ? `_${rep.headline}_` : '',\n  ...rep.summary.map((l) => `• ${l}`),\n  '',\n  rep.nextWeek.length ? `**다음 주 체크포인트**\\n${rep.nextWeek.slice(0, 5).map((l) => `• ${l}`).join('\\n')}` : '',\n  '',\n  `전체 리포트: ${c.siteUrl}/weekly/${c.week} (1~2분 뒤 열립니다)`,\n].filter((x, i, a) => x !== '' || a[i - 1] !== '').join('\\n').slice(0, 1990);\n\nconst kbText = [rep.headline, ...rep.summary, ...rep.market.map((x) => x.text), ...rep.watch.map((x) => `${x.name}: ${x.text}`), ...rep.data, ...rep.nextWeek.map((l) => `다음 주: ${l}`)].filter(Boolean).join('\\n');\nreturn [{\n  json: {\n    ai,\n    sitePath: `src/content/weekly/${c.week}.md`,\n    siteContent: b64(site),\n    vaultPath: `자동/주간/${c.week} 주간 리포트.md`,\n    vaultContent: b64(vault),\n    reportRows: [{ report_key: `weekly:${c.week}`, kind: 'weekly', title: c.title, body: JSON.stringify(rep), tickers: [], created_at: c.nowIso }],\n    kbChunks: [{ chunk_key: `weekly:${c.week}`, kind: 'weekly', is_ai: true, tier: null, source_grade: null, market: null, tickers: [], source: '주간 리포트', url: `${c.siteUrl}/weekly/${c.week}`, published_at: c.nowIso, content: `${c.title}\\n${kbText}`.slice(0, 4000) }],\n    discord: { username: '투자 뉴스 브리프 · 주간', content: discord },\n    commitMessage: `weekly: ${c.week}${ai ? '' : ' (AI 요약 없음)'}`,\n  },\n}];\n"
+      },
+      "id": "000000d2-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "리포트 완성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2530,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.githubRepo }}/contents/{{ $('리포트 완성').first().json.sitePath.split('/').map(encodeURIComponent).join('/') }}?ref={{ $('설정').first().json.githubBranch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000d3-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "사이트 기존 파일",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2760,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.githubRepo }}/contents/{{ $('리포트 완성').first().json.sitePath.split('/').map(encodeURIComponent).join('/') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: $('리포트 완성').first().json.commitMessage, content: $('리포트 완성').first().json.siteContent, branch: $('설정').first().json.githubBranch, ...($json.sha ? { sha: $json.sha } : {}) }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "000000d4-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "사이트에 커밋",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2990,
+        300
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/reports?on_conflict=report_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('리포트 완성').first().json.reportRows) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000d5-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "리포트 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3220,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "if (!$('설정').first().json.discordWebhookUrl) return [];\nreturn [{ json: $('리포트 완성').first().json.discord }];\n"
+      },
+      "id": "000000d6-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "Discord 사용?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3450,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.discordWebhookUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000d7-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "Discord 주간 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3680,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "if (!$('설정').first().json.vaultRepo) return [];\nreturn [{ json: {} }];\n"
+      },
+      "id": "000000d8-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "볼트 사용?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.vaultRepo }}/contents/{{ $('리포트 완성').first().json.vaultPath.split('/').map(encodeURIComponent).join('/') }}?ref={{ $('설정').first().json.vaultBranch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "000000d9-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "볼트 기존 파일",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3680,
+        300
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{ $('설정').first().json.githubOwner }}/{{ $('설정').first().json.vaultRepo }}/contents/{{ $('리포트 완성').first().json.vaultPath.split('/').map(encodeURIComponent).join('/') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ message: $('리포트 완성').first().json.commitMessage, content: $('리포트 완성').first().json.vaultContent, branch: $('설정').first().json.vaultBranch, ...($json.sha ? { sha: $json.sha } : {}) }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "000000da-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "볼트에 노트 커밋",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3910,
+        300
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const c = $('설정').first().json;\nconst chunks = $('리포트 완성').first().json.kbChunks || [];\nif (!chunks.length) return [];\nreturn [{ json: { chunks, body: { requests: chunks.map((k) => ({ model: `models/${c.embeddingModel}`, content: { parts: [{ text: k.content }] }, taskType: 'RETRIEVAL_DOCUMENT', outputDimensionality: c.embedDim })) } } }];\n"
+      },
+      "id": "000000db-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "지식베이스 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3450,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/{{ $('설정').first().json.embeddingModel }}:batchEmbedContents",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "000000dc-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "임베딩",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3680,
+        480
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// 임베딩 결과를 조각과 짝지어 저장할 행을 만듭니다. 768차원으로 줄인 벡터는 길이를 1로 맞춥니다.\nconst c = $('설정').first().json;\nconst reqs = $('지식베이스 준비').all();\nfunction paired(item) {\n  const p = item.pairedItem;\n  if (Array.isArray(p)) return p[0] ? p[0].item : 0;\n  return p && typeof p.item === 'number' ? p.item : 0;\n}\nconst rows = [];\nfor (const it of $input.all()) {\n  const req = reqs[paired(it)];\n  const embs = (it.json && it.json.embeddings) || [];\n  if (!req || embs.length !== req.json.chunks.length) throw new Error('임베딩 결과 개수가 요청과 다릅니다');\n  req.json.chunks.forEach((k, i) => {\n    const v = embs[i].values || [];\n    if (v.length !== c.embedDim) throw new Error(`임베딩 크기 ${v.length} ≠ embedDim ${c.embedDim}`);\n    const norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0)) || 1;\n    rows.push({ ...k, embedding: v.map((x) => Math.round((x / norm) * 1e6) / 1e6) });\n  });\n}\nif (!rows.length) return [];\nreturn [{ json: { rows } }];\n"
+      },
+      "id": "000000dd-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "지식베이스 저장 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3910,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('설정').first().json.supabaseUrl }}/rest/v1/kb_chunks?on_conflict=chunk_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.rows) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "000000de-0000-4000-8000-1a2b3c4d5e6f",
+      "name": "지식베이스 저장",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4140,
+        480
+      ]
+    }
+  ],
+  "connections": {
+    "매주 일요일 08:00": {
+      "main": [
+        [
+          {
+            "node": "설정",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "설정": {
+      "main": [
+        [
+          {
+            "node": "주간 기사 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "주간 기사 조회": {
+      "main": [
+        [
+          {
+            "node": "지표 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지표 조회": {
+      "main": [
+        [
+          {
+            "node": "다음 주 일정 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "다음 주 일정 조회": {
+      "main": [
+        [
+          {
+            "node": "관심 종목 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "관심 종목 조회": {
+      "main": [
+        [
+          {
+            "node": "주간 리서치 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "주간 리서치 조회": {
+      "main": [
+        [
+          {
+            "node": "자료 정리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "자료 정리": {
+      "main": [
+        [
+          {
+            "node": "주간 리포트 작성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "주간 리포트 작성": {
+      "main": [
+        [
+          {
+            "node": "결과 합치기",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "주간 리포트 작성 (예비)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "주간 리포트 작성 (예비)": {
+      "main": [
+        [
+          {
+            "node": "결과 합치기",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "결과 합치기": {
+      "main": [
+        [
+          {
+            "node": "리포트 완성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "리포트 완성": {
+      "main": [
+        [
+          {
+            "node": "사이트 기존 파일",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "사이트 기존 파일": {
+      "main": [
+        [
+          {
+            "node": "사이트에 커밋",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "사이트에 커밋": {
+      "main": [
+        [
+          {
+            "node": "리포트 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "리포트 저장": {
+      "main": [
+        [
+          {
+            "node": "Discord 사용?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "볼트 사용?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "지식베이스 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord 사용?": {
+      "main": [
+        [
+          {
+            "node": "Discord 주간 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "볼트 사용?": {
+      "main": [
+        [
+          {
+            "node": "볼트 기존 파일",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "볼트 기존 파일": {
+      "main": [
+        [
+          {
+            "node": "볼트에 노트 커밋",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지식베이스 준비": {
+      "main": [
+        [
+          {
+            "node": "임베딩",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "임베딩": {
+      "main": [
+        [
+          {
+            "node": "지식베이스 저장 준비",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "지식베이스 저장 준비": {
+      "main": [
+        [
+          {
+            "node": "지식베이스 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Seoul",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

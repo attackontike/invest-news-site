@@ -1,4 +1,11 @@
-# 투자 뉴스 브리프 (4-A단계까지)
+# 투자 뉴스 브리프
+
+> **Claude Code로 이어서 작업할 때:** `CLAUDE.md`(작업 규칙) → `docs/HANDOFF.md`(현재 상태·남은 일) → `docs/INSTALL.md`(통합 설치 가이드) 순서로 보세요.
+> n8n 워크플로 원본 코드와 빌드 도구는 `tools/n8n-build/`에 있습니다.
+
+(아래는 단계별로 추가된 내용의 기록입니다.)
+
+## 4단계까지 완료
 
 국내·미국 시장 뉴스를 매시간 모아 Supabase에 쌓고, 하루 4번(07:00, 12:00, 16:30, 22:00) Gemini로 요약해 Astro 사이트와 Discord에 게시합니다. 요약한 기사와 브리핑은 지식베이스(pgvector)에도 쌓입니다.
 
@@ -50,7 +57,28 @@
 - **일정 예고** (`n8n/event-preview.json`, 매일 20:00): 내일 중요 일정을 Discord로
 - 사이트 "데이터·일정"(`/data`), 시장 브리핑의 "오늘·내일 경제 일정"
 - `supabase/schema-4.sql`: `indicators`, `econ_events`. 자격 증명 FRED (Query Auth, `api_key`) 추가, ECOS 키는 T3 설정 노드
-- **주의:** 앞으로 `src/`를 덮어쓸 때 `src/data/market.json`은 덮어쓰지 않기 (n8n이 매일 갱신)
+- **주의:** 앞으로 `src/`를 덮어쓸 때 `src/data/market.json`, `src/data/stocks.json`은 덮어쓰지 않기 (n8n이 매일 갱신)
+
+## 4-B에서 추가된 것
+
+- **종목 데이터** (`n8n/stock-data.json`, 매일 06:50): 국내 관심 종목은 DART 정기보고서로 분기 매출·영업이익·순이익과 전년 동기 대비, 미국 관심 종목은 Finnhub로 PER·EPS·52주 범위·시가총액·최근 EPS 실제 vs 예상·다음 실적 발표일. 미국 실적 발표일은 경제 일정(`econ_events`)에 넣어 전날 예고에 포함
+- 사이트 종목 페이지 `/watchlist/<코드>` (재무, 리서치, 기간 제한 없는 타임라인), 관심 종목 한 줄 요약, 데이터·일정에 실적 발표일
+- `supabase/schema-4b.sql`: `stock_data`. 자격 증명 Finnhub (Query Auth, `token`) 추가
+- `src/data/stocks.json`도 n8n이 매일 갱신 (덮어쓰지 않기)
+
+## 시장 심리 지표 (4단계 이후 추가)
+
+- T3 설정 `fred` 목록에 `group: 'sentiment'` 지표 5개: VIX(VIXCLS), 하이일드 스프레드(BAMLH0A0HYM2), 장단기 금리차(T10Y2Y), 달러인덱스(DTWEXBGS), 금융 스트레스 지수(STLFSI4)
+- 사이트 "데이터·일정" 맨 위 "시장 심리" 구역과 시장 온도계(VIX 15·20·30, 스프레드 3.5·4.5·6% 기준, 참고용)
+
+## 주간 리포트
+
+- **주간 리포트** (`n8n/weekly-report.json`, 매주 일요일 08:00): 이번 주 주요 공시·뉴스(사건별 대표), 관심 종목 통계, 지표 1주 변화, 다음 주 일정·리서치 → Gemini(번호 근거 W1…) → 사이트 `/weekly`, Discord, 옵시디안 `자동/주간/`, 지식베이스(AI 해석). Gemini 실패 시 숫자·목록만으로 된 리포트를 게시
+
+## 백업
+
+- **백업** (`n8n/backup.json`, 매주 일요일 06:30): Supabase → 비공개 저장소 `invest-backup`. 기사·지식베이스(벡터 제외)·리포트는 증분(`weekly/날짜/`), 작은 테이블은 전체(`latest/`). 첫 실행은 전체
+- **복구:** `scripts/restore.mjs` (주차별 적용 → latest → 지식베이스 벡터 재생성). 먼저 `--dry-run`
 
 ## 폴더
 

@@ -2,7 +2,7 @@ import market from '../data/market.json';
 import { stocks } from './stocks';
 
 export type Indicator = {
-  key: string; market: 'KR' | 'US'; name: string; unit: string; date: string; value: number | null;
+  key: string; market: 'KR' | 'US'; group?: string | null; name: string; unit: string; date: string; value: number | null;
   prev: number | null; change: number | null; source: string; history: [string, number][];
 };
 export type EconEvent = { date: string; time: string | null; market: 'KR' | 'US'; name: string; importance: number; source: string };
@@ -38,4 +38,27 @@ export function fmtChange(c: number | null, unit: string) {
   const n = Math.abs(c).toLocaleString('ko-KR', { maximumFractionDigits: Math.abs(c) < 1 ? 4 : 2 });
   const u = unit === '%' ? '%p' : unit === '원' ? '원' : ` ${unit}`;
   return `${c > 0 ? '▲' : '▼'} ${n}${u}`;
+}
+
+// ---------- 시장 심리 ----------
+// 참고용 기준: VIX 15·20·30, 하이일드 스프레드 3.5·4.5·6%
+export const MOOD = ['', '안정', '보통', '불안', '공포'] as const;
+const level = (v: number | null | undefined, cuts: [number, number, number]) =>
+  v === null || v === undefined ? null : v < cuts[0] ? 1 : v < cuts[1] ? 2 : v < cuts[2] ? 3 : 4;
+export function sentimentNote(i: Indicator): string {
+  const v = i.value;
+  if (v === null) return '';
+  if (i.key === 'US:VIXCLS') return MOOD[level(v, [15, 20, 30])!];
+  if (i.key === 'US:BAMLH0A0HYM2') return MOOD[level(v, [3.5, 4.5, 6])!];
+  if (i.key === 'US:T10Y2Y') return v < 0 ? '역전' : '정상';
+  if (i.key === 'US:STLFSI4') return v > 0 ? '평소보다 긴장' : '평소보다 안정';
+  return '';
+}
+export function thermometer() {
+  const vix = indicators.find((i) => i.key === 'US:VIXCLS');
+  const hy = indicators.find((i) => i.key === 'US:BAMLH0A0HYM2');
+  const lv = [level(vix?.value, [15, 20, 30]), level(hy?.value, [3.5, 4.5, 6])].filter((x): x is number => x !== null);
+  if (!lv.length) return null;
+  const n = Math.round(lv.reduce((a, b) => a + b, 0) / lv.length) as 1 | 2 | 3 | 4;
+  return { level: n, label: MOOD[n], vix: vix?.value ?? null, hy: hy?.value ?? null };
 }

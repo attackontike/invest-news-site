@@ -303,3 +303,23 @@ code { font-size: .875em; padding: .0625rem .3125rem; border-radius: 4px; backgr
 .metric-grid div { padding: .75rem .875rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
 .metric-grid dt { font-size: .8125rem; color: var(--muted); }
 .metric-grid dd { margin: .125rem 0 0; font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* 시장 심리 */
+.thermo { margin: .75rem 0 .875rem; padding: 1rem 1.125rem; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+.thermo-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; max-width: 20rem; }
+.thermo-bar span { height: .5rem; border-radius: 2px; background: var(--rule); }
+.thermo[data-level='1'] .thermo-bar span.on { background: var(--fall); }
+.thermo[data-level='2'] .thermo-bar span.on { background: var(--flat); }
+.thermo[data-level='3'] .thermo-bar span.on, .thermo[data-level='4'] .thermo-bar span.on { background: var(--rise); }
+.thermo-label { margin: .5rem 0 0; font-size: 1.125rem; }
+.thermo[data-level='1'] .thermo-label strong { color: var(--fall); }
+.thermo[data-level='3'] .thermo-label strong, .thermo[data-level='4'] .thermo-label strong { color: var(--rise); }
+.thermo-note { margin: .25rem 0 0; font-size: .8125rem; color: var(--muted); max-width: 46em; }
+.ind-grid { display: grid; gap: .625rem; }
+@media (min-width: 52rem) { .ind-grid { grid-template-columns: 1fr 1fr; } }
+.mood-tag { margin-left: .5rem; font-size: .75rem; font-weight: 600; vertical-align: middle; padding: .125rem .5rem; border-radius: 999px; border: 1px solid var(--rule-strong); color: var(--muted); letter-spacing: 0; }
+
+/* 주간 리포트 */
+.weekly-link { margin: -1rem 0 2rem; padding: .75rem 1rem; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); font-size: .9375rem; }
+.weekly-link a { font-weight: 700; }
+.weekly-link span { color: var(--muted); }
