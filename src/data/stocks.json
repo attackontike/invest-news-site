@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-19T21:50:01.943Z",
+  "updatedAt": "2026-11-20T21:50:01.850Z",
   "stocks": {
     "KR:005930": {
       "market": "KR",
@@ -181,20 +181,20 @@
       "name": "NVDA",
       "companyName": "NVIDIA Corporation",
       "price": {
-        "value": 145.98,
-        "change": -4.98,
-        "pct": -3.3,
-        "date": "2026-11-19",
+        "value": 125.53,
+        "change": -20.45,
+        "pct": -14.01,
+        "date": "2026-11-20",
         "currency": "USD"
       },
       "financials": {},
       "metrics": {
         "companyName": "NVIDIA Corporation",
         "price": {
-          "value": 145.98,
-          "change": -4.98,
-          "pct": -3.3,
-          "date": "2026-11-19",
+          "value": 125.53,
+          "change": -20.45,
+          "pct": -14.01,
+          "date": "2026-11-20",
           "currency": "USD"
         },
         "pe": 16.0797,
@@ -248,20 +248,20 @@
       "name": "TSLA",
       "companyName": "Tesla Inc",
       "price": {
-        "value": 374.41,
-        "change": -9.31,
-        "pct": -2.43,
-        "date": "2026-11-19",
+        "value": 345.82,
+        "change": -28.59,
+        "pct": -7.64,
+        "date": "2026-11-20",
         "currency": "USD"
       },
       "financials": {},
       "metrics": {
         "companyName": "Tesla Inc",
         "price": {
-          "value": 374.41,
-          "change": -9.31,
-          "pct": -2.43,
-          "date": "2026-11-19",
+          "value": 345.82,
+          "change": -28.59,
+          "pct": -7.64,
+          "date": "2026-11-20",
           "currency": "USD"
         },
         "pe": 445.8262,
@@ -480,93 +480,6 @@
             "revenue": 634139000000,
             "op": 7551000000,
             "net": 342000000,
-            "revenueYoY": null,
-            "opYoY": null,
-            "netYoY": null
-          }
-        ]
-      },
-      "metrics": {},
-      "earnings": [],
-      "nextEarnings": null
-    },
-    "KR:066570": {
-      "market": "KR",
-      "code": "066570",
-      "name": "LG전자",
-      "companyName": null,
-      "price": null,
-      "financials": {
-        "unit": "원",
-        "quarters": [
-          {
-            "label": "2026 3Q",
-            "revenue": 23824080000000,
-            "op": 781858000000,
-            "net": 708407000000,
-            "revenueYoY": 8.9,
-            "opYoY": 13.5,
-            "netYoY": 53.6
-          },
-          {
-            "label": "2026 2Q",
-            "revenue": 23826468000000,
-            "op": 1579082000000,
-            "net": 781322000000,
-            "revenueYoY": 14.9,
-            "opYoY": 147,
-            "netYoY": 28.2
-          },
-          {
-            "label": "2026 1Q",
-            "revenue": 23727227000000,
-            "op": 1673723000000,
-            "net": 1005088000000,
-            "revenueYoY": 4.3,
-            "opYoY": 32.9,
-            "netYoY": 14.8
-          },
-          {
-            "label": "2025 4Q",
-            "revenue": 23852154000000,
-            "op": -108989000000,
-            "net": -725923000000,
-            "revenueYoY": 4.8,
-            "opYoY": -180.5,
-            "netYoY": -1.7
-          },
-          {
-            "label": "2025 3Q",
-            "revenue": 21873774000000,
-            "op": 688918000000,
-            "net": 461074000000,
-            "revenueYoY": -1.4,
-            "opYoY": -8.4,
-            "netYoY": 411
-          },
-          {
-            "label": "2025 2Q",
-            "revenue": 20735142000000,
-            "op": 639404000000,
-            "net": 609643000000,
-            "revenueYoY": -4.4,
-            "opYoY": -46.5,
-            "netYoY": -3.1
-          },
-          {
-            "label": "2025 1Q",
-            "revenue": 22739812000000,
-            "op": 1259059000000,
-            "net": 875618000000,
-            "revenueYoY": 7.8,
-            "opYoY": -5.7,
-            "netYoY": 49.6
-          },
-          {
-            "label": "2024 4Q",
-            "revenue": 22761475000000,
-            "op": 135331000000,
-            "net": -713754000000,
             "revenueYoY": null,
             "opYoY": null,
             "netYoY": null
