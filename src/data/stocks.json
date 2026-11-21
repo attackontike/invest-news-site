@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-20T21:50:01.850Z",
+  "updatedAt": "2026-11-21T21:50:01.982Z",
   "stocks": {
     "KR:005930": {
       "market": "KR",
@@ -197,13 +197,13 @@
           "date": "2026-11-20",
           "currency": "USD"
         },
-        "pe": 16.0797,
+        "pe": 15.5493,
         "eps": 9.306799999999999,
         "revenueGrowthQ": 103.21,
         "netMargin": 62.53,
         "high52": 243.37,
         "low52": 148.8,
-        "marketCap": 3638136.2,
+        "marketCap": 3518118,
         "dividendYield": 0.03349
       },
       "earnings": [
@@ -264,13 +264,13 @@
           "date": "2026-11-20",
           "currency": "USD"
         },
-        "pe": 445.8262,
+        "pe": 447.2044,
         "eps": 0.9095000000000001,
         "revenueGrowthQ": -0.17,
         "netMargin": 3.11,
         "high52": 498.83,
         "low52": 297.38,
-        "marketCap": 1435560.5,
+        "marketCap": 1439998.1,
         "dividendYield": null
       },
       "earnings": [
