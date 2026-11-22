@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-21T21:40:01.873Z",
+  "updatedAt": "2026-11-22T21:40:01.956Z",
   "indicators": [
     {
       "key": "KR:722Y001:0101000",
@@ -7,16 +7,12 @@
       "group": null,
       "name": "한국 기준금리",
       "unit": "%",
-      "date": "2026-11-19",
+      "date": "2026-11-20",
       "value": 3,
       "prev": 2.75,
       "change": 0.25,
       "source": "한국은행 ECOS",
       "history": [
-        [
-          "2026-10-21",
-          3
-        ],
         [
           "2026-10-22",
           3
@@ -131,6 +127,10 @@
         ],
         [
           "2026-11-19",
+          3
+        ],
+        [
+          "2026-11-20",
           3
         ]
       ]
@@ -1165,16 +1165,12 @@
       "group": null,
       "name": "미국 기준금리 (상단)",
       "unit": "%",
-      "date": "2026-11-21",
+      "date": "2026-11-22",
       "value": 4,
       "prev": 3.75,
       "change": 0.25,
       "source": "FRED",
       "history": [
-        [
-          "2026-10-23",
-          4
-        ],
         [
           "2026-10-24",
           4
@@ -1289,6 +1285,10 @@
         ],
         [
           "2026-11-21",
+          4
+        ],
+        [
+          "2026-11-22",
           4
         ]
       ]
@@ -3232,6 +3232,46 @@
       "time": "22:30",
       "market": "US",
       "name": "미국 소매판매",
+      "importance": 2,
+      "source": "FRED"
+    },
+    {
+      "date": "2026-12-23",
+      "time": "22:30",
+      "market": "US",
+      "name": "미국 GDP",
+      "importance": 2,
+      "source": "FRED"
+    },
+    {
+      "date": "2026-12-23",
+      "time": "22:30",
+      "market": "US",
+      "name": "미국 GDP",
+      "importance": 2,
+      "source": "FRED"
+    },
+    {
+      "date": "2026-12-23",
+      "time": "22:30",
+      "market": "US",
+      "name": "미국 GDP",
+      "importance": 2,
+      "source": "FRED"
+    },
+    {
+      "date": "2026-12-23",
+      "time": "22:30",
+      "market": "US",
+      "name": "미국 GDP",
+      "importance": 2,
+      "source": "FRED"
+    },
+    {
+      "date": "2026-12-23",
+      "time": "22:30",
+      "market": "US",
+      "name": "미국 PCE 물가",
       "importance": 2,
       "source": "FRED"
     }
