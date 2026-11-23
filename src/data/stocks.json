@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-22T21:50:01.881Z",
+  "updatedAt": "2026-11-23T21:50:02.014Z",
   "stocks": {
     "KR:005930": {
       "market": "KR",
@@ -181,20 +181,20 @@
       "name": "NVDA",
       "companyName": "NVIDIA Corporation",
       "price": {
-        "value": 125.53,
-        "change": -20.45,
-        "pct": -14.01,
-        "date": "2026-11-20",
+        "value": 165.05,
+        "change": 39.52,
+        "pct": 31.48,
+        "date": "2026-11-23",
         "currency": "USD"
       },
       "financials": {},
       "metrics": {
         "companyName": "NVIDIA Corporation",
         "price": {
-          "value": 125.53,
-          "change": -20.45,
-          "pct": -14.01,
-          "date": "2026-11-20",
+          "value": 165.05,
+          "change": 39.52,
+          "pct": 31.48,
+          "date": "2026-11-23",
           "currency": "USD"
         },
         "pe": 13.371,
@@ -248,29 +248,29 @@
       "name": "TSLA",
       "companyName": "Tesla Inc",
       "price": {
-        "value": 345.82,
-        "change": -28.59,
-        "pct": -7.64,
-        "date": "2026-11-20",
+        "value": 385.46,
+        "change": 39.64,
+        "pct": 11.46,
+        "date": "2026-11-23",
         "currency": "USD"
       },
       "financials": {},
       "metrics": {
         "companyName": "Tesla Inc",
         "price": {
-          "value": 345.82,
-          "change": -28.59,
-          "pct": -7.64,
-          "date": "2026-11-20",
+          "value": 385.46,
+          "change": 39.64,
+          "pct": 11.46,
+          "date": "2026-11-23",
           "currency": "USD"
         },
-        "pe": 432.4293,
+        "pe": 424.5164,
         "eps": 0.9095000000000001,
         "revenueGrowthQ": -0.17,
         "netMargin": 3.11,
         "high52": 498.83,
         "low52": 297.38,
-        "marketCap": 1392422.5,
+        "marketCap": 1366942.8,
         "dividendYield": null
       },
       "earnings": [
