@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-23T21:50:02.014Z",
+  "updatedAt": "2026-11-24T21:50:01.937Z",
   "stocks": {
     "KR:005930": {
       "market": "KR",
@@ -181,29 +181,29 @@
       "name": "NVDA",
       "companyName": "NVIDIA Corporation",
       "price": {
-        "value": 165.05,
-        "change": 39.52,
-        "pct": 31.48,
-        "date": "2026-11-23",
+        "value": 155.38,
+        "change": -9.67,
+        "pct": -5.86,
+        "date": "2026-11-24",
         "currency": "USD"
       },
       "financials": {},
       "metrics": {
         "companyName": "NVIDIA Corporation",
         "price": {
-          "value": 165.05,
-          "change": 39.52,
-          "pct": 31.48,
-          "date": "2026-11-23",
+          "value": 155.38,
+          "change": -9.67,
+          "pct": -5.86,
+          "date": "2026-11-24",
           "currency": "USD"
         },
-        "pe": 13.371,
+        "pe": 17.5806,
         "eps": 9.306799999999999,
         "revenueGrowthQ": 103.21,
         "netMargin": 62.53,
         "high52": 243.37,
         "low52": 124.5,
-        "marketCap": 3025273,
+        "marketCap": 3977705,
         "dividendYield": 0.03349
       },
       "earnings": [
@@ -248,29 +248,29 @@
       "name": "TSLA",
       "companyName": "Tesla Inc",
       "price": {
-        "value": 385.46,
-        "change": 39.64,
-        "pct": 11.46,
-        "date": "2026-11-23",
+        "value": 384.68,
+        "change": -0.78,
+        "pct": -0.2,
+        "date": "2026-11-24",
         "currency": "USD"
       },
       "financials": {},
       "metrics": {
         "companyName": "Tesla Inc",
         "price": {
-          "value": 385.46,
-          "change": 39.64,
-          "pct": 11.46,
-          "date": "2026-11-23",
+          "value": 384.68,
+          "change": -0.78,
+          "pct": -0.2,
+          "date": "2026-11-24",
           "currency": "USD"
         },
-        "pe": 424.5164,
+        "pe": 480.5854,
         "eps": 0.9095000000000001,
         "revenueGrowthQ": -0.17,
         "netMargin": 3.11,
         "high52": 498.83,
         "low52": 297.38,
-        "marketCap": 1366942.8,
+        "marketCap": 1547485,
         "dividendYield": null
       },
       "earnings": [
