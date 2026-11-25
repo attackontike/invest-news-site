@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-24T21:50:01.937Z",
+  "updatedAt": "2026-11-25T21:50:02.105Z",
   "stocks": {
     "KR:005930": {
       "market": "KR",
@@ -181,29 +181,29 @@
       "name": "NVDA",
       "companyName": "NVIDIA Corporation",
       "price": {
-        "value": 155.38,
-        "change": -9.67,
-        "pct": -5.86,
-        "date": "2026-11-24",
+        "value": 149.3,
+        "change": -6.08,
+        "pct": -3.91,
+        "date": "2026-11-25",
         "currency": "USD"
       },
       "financials": {},
       "metrics": {
         "companyName": "NVIDIA Corporation",
         "price": {
-          "value": 155.38,
-          "change": -9.67,
-          "pct": -5.86,
-          "date": "2026-11-24",
+          "value": 149.3,
+          "change": -6.08,
+          "pct": -3.91,
+          "date": "2026-11-25",
           "currency": "USD"
         },
-        "pe": 17.5806,
+        "pe": 16.5505,
         "eps": 9.306799999999999,
         "revenueGrowthQ": 103.21,
         "netMargin": 62.53,
         "high52": 243.37,
         "low52": 124.5,
-        "marketCap": 3977705,
+        "marketCap": 3744658,
         "dividendYield": 0.03349
       },
       "earnings": [
@@ -240,7 +240,14 @@
           "surprisePercent": 3.6
         }
       ],
-      "nextEarnings": null
+      "nextEarnings": {
+        "date": "2027-02-24",
+        "time": "06:05",
+        "usDate": "2027-02-23",
+        "hour": "amc",
+        "label": "장 마감 후",
+        "epsEstimate": 2.9375
+      }
     },
     "US:TSLA": {
       "market": "US",
@@ -248,29 +255,29 @@
       "name": "TSLA",
       "companyName": "Tesla Inc",
       "price": {
-        "value": 384.68,
-        "change": -0.78,
-        "pct": -0.2,
-        "date": "2026-11-24",
+        "value": 380.14,
+        "change": -4.54,
+        "pct": -1.18,
+        "date": "2026-11-25",
         "currency": "USD"
       },
       "financials": {},
       "metrics": {
         "companyName": "Tesla Inc",
         "price": {
-          "value": 384.68,
-          "change": -0.78,
-          "pct": -0.2,
-          "date": "2026-11-24",
+          "value": 380.14,
+          "change": -4.54,
+          "pct": -1.18,
+          "date": "2026-11-25",
           "currency": "USD"
         },
-        "pe": 480.5854,
+        "pe": 473.2481,
         "eps": 0.9095000000000001,
         "revenueGrowthQ": -0.17,
         "netMargin": 3.11,
         "high52": 498.83,
         "low52": 297.38,
-        "marketCap": 1547485,
+        "marketCap": 1523858.9,
         "dividendYield": null
       },
       "earnings": [
